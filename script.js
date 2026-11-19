@@ -73,11 +73,16 @@ function initHome() {
     if (cr) cr.created += 1;
 
     const cleared = new Set();
-    if (lvl.verifier) cleared.add(lvl.verifier);
+    const isEveryone = lvl.verifier === "everyone" || (Array.isArray(lvl.victors) && lvl.victors.includes("everyone"));
+
+    if (lvl.verifier && lvl.verifier !== "everyone") cleared.add(lvl.verifier);
     if (Array.isArray(lvl.victors)) {
       lvl.victors.forEach((v) => {
         if (v !== "everyone") cleared.add(v);
       });
+    }
+    if (isEveryone) {
+      CREATORS.forEach((c) => cleared.add(c));
     }
 
     cleared.forEach((player) => {
@@ -113,12 +118,16 @@ function initHome() {
   });
 
   (window.BEATEN_LIST || []).forEach((lvl) => {
-    if (Array.isArray(lvl.victors)) {
-      lvl.victors.forEach((v) => {
-        const p = ensurePlayer(v);
-        if (p) p.beaten += 1;
-      });
-    }
+    if (!Array.isArray(lvl.victors)) return;
+    const beaters = new Set();
+    lvl.victors.forEach((v) => {
+      if (v === "everyone") CREATORS.forEach((c) => beaters.add(c));
+      else beaters.add(v);
+    });
+    beaters.forEach((v) => {
+      const p = ensurePlayer(v);
+      if (p) p.beaten += 1;
+    });
   });
 
   const rows = Object.values(stats)
@@ -222,7 +231,7 @@ function initListPage() {
         });
 
       bodyEl.innerHTML = rows.length ? rows.map((lvl) => `
-        <tr class="tier-${lvl.tier}">
+        <tr class="tier-${lvl.tier}${lvl.rank === 1 ? " top-1" : ""}">
           <td class="rank-cell">#${lvl.rank}</td>
           <td><span class="tier-badge badge-${lvl.tier}">${lvl.tier}</span></td>
           <td>
@@ -260,7 +269,7 @@ function initListPage() {
         });
 
       bodyEl.innerHTML = rows.length ? rows.map((lvl) => `
-        <tr>
+        <tr class="${lvl.rank === 1 ? "top-1 top-1-zoink" : ""}">
           <td class="rank-cell">#${lvl.rank}</td>
           <td>
             <div class="lvl-name">
@@ -295,9 +304,9 @@ function initListPage() {
         });
 
       bodyEl.innerHTML = rows.length ? rows.map((lvl) => `
-        <tr>
+        <tr class="${lvl.rank === 1 ? "top-1 top-1-impos" : ""}">
           <td class="rank-cell">#${lvl.rank}</td>
-          <td><strong>${esc(lvl.name)}</strong></td>
+          <td><div class="lvl-name"><span>${esc(lvl.name)}</span></div></td>
           <td>${esc(lvl.creator)}</td>
           <td class="pts-cell">${lvl.points.toLocaleString("en-US")}</td>
           <td>${idButtonHtml(lvl.id)}</td>
