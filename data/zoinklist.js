@@ -5,6 +5,7 @@ window.ZOINK_LIST = [
         creator: "ewasion",
         best: { player: "ewasion", percent: 4.25 },
         points: 10000,
+        thumb: "thumb/abhorrence.mp4",
     },
     {
         name: "Hardest Challenge",

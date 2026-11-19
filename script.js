@@ -1,9 +1,9 @@
 const CREATORS = ["Miles_Fur", "banbondir", "Legendary", "ewasion", "tanker"];
 
 const DEMON_ICONS = {
-  M: "https://static.wikia.nocookie.net/geometry-dash-unofficial/images/d/d8/Medium_Demon.png/revision/latest?cb=20180707082309",
-  H: "https://static.wikia.nocookie.net/geometry-dash-unofficial/images/4/48/Hard_Demon.png/revision/latest?cb=20180130191113",
-  I: "https://i.redd.it/3talfq16wyye1.png"
+    M: "https://static.wikia.nocookie.net/geometry-dash-unofficial/images/d/d8/Medium_Demon.png/revision/latest?cb=20180707082309",
+    H: "https://static.wikia.nocookie.net/geometry-dash-unofficial/images/4/48/Hard_Demon.png/revision/latest?cb=20180130191113",
+    I: "https://upload.wikimedia.org/wikipedia/commons/a/ae/Insane_Demon_Icon.webp?utm_source=commons.wikimedia.org&utm_campaign=index&utm_content=original",
 };
 
 const DIFF_LABELS = {

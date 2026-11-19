@@ -1,5 +1,11 @@
 window.IMPOS_LIST = [
-    { name: "AMALGAM", id: "134006007", creator: "ewasion", points: 100000 },
+    {
+        name: "AMALGAM",
+        id: "134006007",
+        creator: "ewasion",
+        points: 100000,
+        thumb: "thumb/Amalgam.mp4",
+    },
     { name: "Cycles What", id: "133846012", creator: "ewasion", points: 85000 },
     { name: "HELLSCAPE 2", id: "102361097", creator: "ewasion", points: 72000 },
     {
