@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Roulette — Private GD List</title>
+  <link rel="stylesheet" href="page.css">
+</head>
+<body>
+  <header class="topbar">
+    <div class="topbar-inner">
+      <a href="index.html" class="brand"><span class="brand-mark"></span>EWASION LIST</a>
+      <nav class="nav">
+        <a href="index.html">Home</a>
+        <a href="list.html#main">Main Top</a>
+        <a href="list.html#zoink">Zoink Skill</a>
+        <a href="list.html#impossible">Impossible</a>
+        <a href="list.html#beaten">Beaten</a>
+        <a href="roulette.html" class="active">Roulette</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="wrap" id="roulette-view">
+    <div class="page-head">
+      <div>
+        <h1>Demonlist Roulette</h1>
+        <p>Дойди до 100%, проходя случайные уровни с ростом требуемого процента</p>
+      </div>
+      <div style="display: flex; gap: 8px; align-items: center;">
+        <select id="r-pool" class="select-input">
+          <option value="main">Main Top (31)</option>
+          <option value="zoink">Zoink Skill (15)</option>
+          <option value="beaten">Beaten by Us (9)</option>
+          <option value="all">Main + Beaten</option>
+        </select>
+        <button id="r-start" class="btn btn-primary">Новый забег</button>
+      </div>
+    </div>
+
+    <div class="roulette-box">
+      <div class="r-current" id="r-stage"></div>
+      <div class="card">
+        <div class="card-title">
+          <span>История забега</span>
+          <span id="r-score" class="range-tag">Score: 0</span>
+        </div>
+        <ul class="r-log" id="r-log"></ul>
+      </div>
+    </div>
+  </main>
+
+  <script src="data/mainlist.js"></script>
+  <script src="data/zoinklist.js"></script>
+  <script src="data/imposlist.js"></script>
+  <script src="data/beatenlist.js"></script>
+  <script src="script.js"></script>
+</body>
+</html>

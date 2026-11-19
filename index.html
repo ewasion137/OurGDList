@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Private GD List</title>
+  <link rel="stylesheet" href="page.css">
+</head>
+<body>
+  <header class="topbar">
+    <div class="topbar-inner">
+      <a href="index.html" class="brand"><span class="brand-mark"></span>EWASION LIST</a>
+      <nav class="nav">
+        <a href="index.html" class="active">Home</a>
+        <a href="list.html#main">Main Top</a>
+        <a href="list.html#zoink">Zoink Skill</a>
+        <a href="list.html#impossible">Impossible</a>
+        <a href="list.html#beaten">Beaten</a>
+        <a href="roulette.html">Roulette</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="wrap" id="home-view">
+    <div class="page-head">
+      <div>
+        <h1>Private Demon & Challenge List</h1>
+        <p>Закрытый лист уровней, правила верификации и общий рейтинг игроков</p>
+      </div>
+      <a href="list.html#main" class="btn btn-primary">Открыть списки</a>
+    </div>
+
+    <div class="card" style="margin-bottom: 16px;">
+      <div class="card-title">
+        <span>Allowed Creators</span>
+        <span class="range-tag">Friends Only</span>
+      </div>
+      <div class="creators-row">
+        <span class="pill">Miles_Fur</span>
+        <span class="pill">banbondir</span>
+        <span class="pill">Legendary (Zard)</span>
+        <span class="pill">ewasion (PsYhOpAtT)</span>
+        <span class="pill">tanker</span>
+      </div>
+      <p class="muted" style="margin-top: 10px; font-size: 12px;">
+        Правило 1: длинное или пустое начало уровня без геймплея можно скипать через Speedhack, Noclip или Startpos, если вы стабильно проходите его 5 раз подряд. Noclip обязательно выключается сразу после конца секции (пример: Bevlynous, Nine Sonic).<br>
+        Правило 3: предлагать и верифицировать уровни могут только друзья ewasion.
+      </p>
+    </div>
+
+    <div class="grid-3">
+      <div class="card">
+        <div class="card-title">
+          <span>Main Top</span>
+          <span class="range-tag">0 - 1,000 pts</span>
+        </div>
+        <ul class="rules-list">
+          <li>Верификация минимум 0-60% уровня без читов.</li>
+          <li>Уровень длиннее 5 секунд.</li>
+          <li>Запрещены челленджи короче нормы и альт-спам быстрее 14 CPS.</li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <div class="card-title">
+          <span>Zoink Skill Top</span>
+          <span class="range-tag">1,000 - 10,000 pts</span>
+        </div>
+        <ul class="rules-list">
+          <li>Может быть не верифицирован, но нужен записанный макрос прохождения.</li>
+          <li>Проходимость без смены TPS.</li>
+          <li>Без спама быстрее 16 CPS.</li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <div class="card-title">
+          <span>Impossible Top</span>
+          <span class="range-tag">10,000 - 100,000 pts</span>
+        </div>
+        <ul class="rules-list">
+          <li>Лимит до 6000 TPS включительно.</li>
+          <li>Обязателен записанный макрос полного прохождения.</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="card-title" style="margin-bottom: 8px;">
+      <span>Players Leaderboard</span>
+      <span class="muted">Main 100% + Main / Zoink progress %</span>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Player</th>
+            <th>Main Pts</th>
+            <th>Zoink Pts</th>
+            <th>Total Score</th>
+            <th>Clears</th>
+            <th>Beaten</th>
+            <th>Created</th>
+          </tr>
+        </thead>
+        <tbody id="leaderboard-body"></tbody>
+      </table>
+    </div>
+  </main>
+
+  <script src="data/mainlist.js"></script>
+  <script src="data/zoinklist.js"></script>
+  <script src="data/imposlist.js"></script>
+  <script src="data/beatenlist.js"></script>
+  <script src="script.js"></script>
+</body>
+</html>
