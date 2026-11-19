@@ -45,195 +45,434 @@ function idButtonHtml(id) {
   return `<button class="id-btn" type="button" data-copy="${esc(id)}">ID: ${esc(id)}</button>`;
 }
 
-/* =========================================================
-   БУМАЖНЫЙ STOP-MOTION ДВИЖОК + КАРТОННЫЕ ПОПАПЫ
-   ========================================================= */
-(function initPaperCraftEngine() {
-  // 1. SVG-фильтры для эффекта "помятости" текста на каждом кадре
-  const seeds = [7, 23, 51, 89];
-  const strongFilters = seeds.map((seed, i) => `
-    <filter id="crumple-strong-${i}" x="-10%" y="-20%" width="120%" height="140%">
-      <feTurbulence type="turbulence" baseFrequency="0.032 0.075" numOctaves="2" seed="${seed}" result="n"/>
-      <feDisplacementMap in="SourceGraphic" in2="n" scale="${2.3 + (i % 2) * 0.9}" xChannelSelector="R" yChannelSelector="G"/>
-    </filter>
-  `).join("");
+/* Bryce 3D + PS1 low-poly background engine and UI overlays */
+(function initGlacierEngine() {
+  const canvas = document.createElement("canvas");
+  canvas.className = "glacier-bg ps1";
+  const scanOverlay = document.createElement("div");
+  scanOverlay.className = "glacier-scan";
+  document.body.prepend(scanOverlay);
+  document.body.prepend(canvas);
 
-  const softFilters = seeds.map((seed, i) => `
-    <filter id="crumple-soft-${i}" x="-8%" y="-15%" width="116%" height="130%">
-      <feTurbulence type="turbulence" baseFrequency="0.04 0.08" numOctaves="2" seed="${seed + 100}" result="n"/>
-      <feDisplacementMap in="SourceGraphic" in2="n" scale="${1.05 + (i % 2) * 0.35}" xChannelSelector="R" yChannelSelector="G"/>
-    </filter>
-  `).join("");
+  const ctx = canvas.getContext("2d", { alpha: false });
+  const MODE_KEY = "ewasion_3d_mode";
+  const MODES = ["ps1", "bryce", "off"];
+  let mode = localStorage.getItem(MODE_KEY) || "ps1";
+  if (!MODES.includes(mode)) mode = "ps1";
 
-  const svgHost = document.createElementNS("http://www.w3.org/2000/svg", "svg");
-  svgHost.setAttribute("width", "0");
-  svgHost.setAttribute("height", "0");
-  svgHost.style.position = "absolute";
-  svgHost.style.pointerEvents = "none";
-  svgHost.innerHTML = `<defs>${strongFilters}${softFilters}</defs>`;
-  document.body.prepend(svgHost);
+  const toggleBtn = document.getElementById("render-toggle");
 
-  // 2. Фон из мятой бумаги (4 бесшовных кадра на canvas)
-  const backdrop = document.createElement("div");
-  backdrop.className = "paper-backdrop";
-  const vignette = document.createElement("div");
-  vignette.className = "paper-vignette";
-  document.body.prepend(vignette);
-  document.body.prepend(backdrop);
+  function vecSub(a, b) {
+    return { x: a.x - b.x, y: a.y - b.y, z: a.z - b.z };
+  }
 
-  function mulberry32(a) {
-    return function () {
-      let t = (a += 0x6d2b79f5);
-      t = Math.imul(t ^ (t >>> 15), t | 1);
-      t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
-      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  function vecCross(a, b) {
+    return {
+      x: a.y * b.z - a.z * b.y,
+      y: a.z * b.x - a.x * b.z,
+      z: a.x * b.y - a.y * b.x
     };
   }
 
-  function generateCrumpledPaperFrame(seed) {
-    const size = 460;
-    const grid = 8;
-    const cell = size / grid;
-    const rand = mulberry32(seed);
-    const canvas = document.createElement("canvas");
-    canvas.width = size;
-    canvas.height = size;
-    const ctx = canvas.getContext("2d");
+  function vecDot(a, b) {
+    return a.x * b.x + a.y * b.y + a.z * b.z;
+  }
 
-    ctx.fillStyle = "#eceef1";
-    ctx.fillRect(0, 0, size, size);
+  function vecNorm(v) {
+    const len = Math.hypot(v.x, v.y, v.z) || 1;
+    return { x: v.x / len, y: v.y / len, z: v.z / len };
+  }
 
-    const ox = [];
-    const oy = [];
-    for (let y = 0; y < grid; y++) {
-      ox[y] = [];
-      oy[y] = [];
-      for (let x = 0; x < grid; x++) {
-        ox[y][x] = (rand() - 0.5) * cell * 0.72;
-        oy[y][x] = (rand() - 0.5) * cell * 0.72;
-      }
+  function buildIcosphere(radius) {
+    const t = (1 + Math.sqrt(5)) / 2;
+    const rawVerts = [
+      [-1, t, 0], [1, t, 0], [-1, -t, 0], [1, -t, 0],
+      [0, -1, t], [0, 1, t], [0, -1, -t], [0, 1, -t],
+      [t, 0, -1], [t, 0, 1], [-t, 0, -1], [-t, 0, 1]
+    ].map(([x, y, z]) => vecNorm({ x, y, z }));
+
+    const baseFaces = [
+      [0, 11, 5], [0, 5, 1], [0, 1, 7], [0, 7, 10], [0, 10, 11],
+      [1, 5, 9], [5, 11, 4], [11, 10, 2], [10, 7, 6], [7, 1, 8],
+      [3, 9, 4], [3, 4, 2], [3, 2, 6], [3, 6, 8], [3, 8, 9],
+      [4, 9, 5], [2, 4, 11], [6, 2, 10], [8, 6, 7], [9, 8, 1]
+    ];
+
+    const midCache = new Map();
+    const verts = [...rawVerts];
+
+    function getMid(i1, i2) {
+      const key = i1 < i2 ? `${i1}_${i2}` : `${i2}_${i1}`;
+      if (midCache.has(key)) return midCache.get(key);
+      const a = verts[i1];
+      const b = verts[i2];
+      const idx = verts.length;
+      verts.push(vecNorm({ x: (a.x + b.x) * 0.5, y: (a.y + b.y) * 0.5, z: (a.z + b.z) * 0.5 }));
+      midCache.set(key, idx);
+      return idx;
     }
 
-    function pt(gx, gy) {
-      const wx = ((gx % grid) + grid) % grid;
-      const wy = ((gy % grid) + grid) % grid;
+    const faces = [];
+    for (const [a, b, c] of baseFaces) {
+      const ab = getMid(a, b);
+      const bc = getMid(b, c);
+      const ca = getMid(c, a);
+      faces.push([a, ab, ca], [b, bc, ab], [c, ca, bc], [ab, bc, ca]);
+    }
+
+    const tris = faces.map(([i0, i1, i2], idx) => {
+      const v0 = verts[i0];
+      const v1 = verts[i1];
+      const v2 = verts[i2];
+      const n = vecCross(vecSub(v1, v0), vecSub(v2, v0));
+      const c = { x: (v0.x + v1.x + v2.x) / 3, y: (v0.y + v1.y + v2.y) / 3, z: (v0.z + v1.z + v2.z) / 3 };
+      const ordered = vecDot(n, c) >= 0 ? [v0, v1, v2] : [v0, v2, v1];
       return {
-        x: gx * cell + ox[wy][wx],
-        y: gy * cell + oy[wy][wx]
+        type: "sphere",
+        seed: (idx * 37) % 17,
+        v: ordered.map((p) => ({ x: p.x * radius, y: p.y * radius, z: p.z * radius }))
       };
-    }
-
-    function drawFacet(a, b, c, shadeShift) {
-      const nx = (rand() - 0.5) * 2;
-      const ny = (rand() - 0.5) * 2;
-      const light = nx * -0.58 + ny * -0.72 + shadeShift;
-      const base = Math.max(176, Math.min(254, Math.round(224 + light * 28)));
-      const d1 = Math.max(168, Math.min(255, base - 10));
-      const d2 = Math.max(175, Math.min(255, base + 12));
-
-      const grad = ctx.createLinearGradient(a.x, a.y, c.x, c.y);
-      grad.addColorStop(0, `rgb(${d1}, ${d1 + 1}, ${d1 + 3})`);
-      grad.addColorStop(1, `rgb(${d2}, ${d2 + 1}, ${d2 + 2})`);
-
-      ctx.beginPath();
-      ctx.moveTo(a.x, a.y);
-      ctx.lineTo(b.x, b.y);
-      ctx.lineTo(c.x, c.y);
-      ctx.closePath();
-      ctx.fillStyle = grad;
-      ctx.fill();
-
-      ctx.lineWidth = 0.9;
-      ctx.strokeStyle = rand() > 0.45 ? "rgba(70, 74, 84, 0.22)" : "rgba(255, 255, 255, 0.55)";
-      ctx.stroke();
-    }
-
-    // Рисуем с перекрытием по краям для бесшовности
-    for (let gy = -1; gy <= grid; gy++) {
-      for (let gx = -1; gx <= grid; gx++) {
-        const p00 = pt(gx, gy);
-        const p10 = pt(gx + 1, gy);
-        const p01 = pt(gx, gy + 1);
-        const p11 = pt(gx + 1, gy + 1);
-        const shift = (rand() - 0.5) * 0.25;
-        if (rand() > 0.5) {
-          drawFacet(p00, p10, p11, shift);
-          drawFacet(p00, p11, p01, -shift);
-        } else {
-          drawFacet(p00, p10, p01, shift);
-          drawFacet(p10, p11, p01, -shift);
-        }
-      }
-    }
-
-    // Мелкое зерно бумаги
-    for (let i = 0; i < 1100; i++) {
-      const rx = rand() * size;
-      const ry = rand() * size;
-      ctx.fillStyle = rand() > 0.5 ? "rgba(0,0,0,0.035)" : "rgba(255,255,255,0.28)";
-      ctx.fillRect(rx, ry, 1.5, 1.5);
-    }
-
-    return canvas.toDataURL("image/png");
+    });
+    return tris;
   }
 
-  const paperFrames = [101, 313, 617, 941].map(generateCrumpledPaperFrame);
-  backdrop.style.backgroundImage = `url("${paperFrames[0]}")`;
+  function buildPyramid(width, height, seedOffset) {
+    const hw = width * 0.5;
+    const base = [
+      { x: -hw, y: 0, z: -hw },
+      { x: hw, y: 0, z: -hw },
+      { x: hw, y: 0, z: hw },
+      { x: -hw, y: 0, z: hw }
+    ];
+    const apex = { x: 0, y: height, z: 0 };
+    const center = { x: 0, y: height * 0.3, z: 0 };
+    const sides = [
+      [base[0], base[1], apex],
+      [base[1], base[2], apex],
+      [base[2], base[3], apex],
+      [base[3], base[0], apex]
+    ];
 
-  // 3. Stop-Motion таймер (~4.3 FPS)
-  const MOTION_KEY = "ewasion_paper_motion";
-  let motionOn = localStorage.getItem(MOTION_KEY) !== "off";
-  let frameIdx = 0;
-
-  const toggleBtn = document.getElementById("motion-toggle");
-  function syncMotionState() {
-    if (motionOn) {
-      document.documentElement.dataset.boil = String(frameIdx);
-      backdrop.style.backgroundImage = `url("${paperFrames[frameIdx]}")`;
-      if (toggleBtn) toggleBtn.textContent = "PAPER: 4 FPS";
-    } else {
-      document.documentElement.dataset.boil = "off";
-      backdrop.style.backgroundImage = `url("${paperFrames[0]}")`;
-      if (toggleBtn) toggleBtn.textContent = "PAPER: STATIC";
-    }
-  }
-
-  syncMotionState();
-  setInterval(() => {
-    if (!motionOn) return;
-    frameIdx = (frameIdx + 1) % 4;
-    syncMotionState();
-  }, 230);
-
-  if (toggleBtn) {
-    toggleBtn.addEventListener("click", () => {
-      motionOn = !motionOn;
-      localStorage.setItem(MOTION_KEY, motionOn ? "on" : "off");
-      syncMotionState();
-      showCardboardToast("Stop-Motion", motionOn ? "Мятая бумага включена (4 FPS)" : "Бумага зафиксирована");
+    return sides.map((tri, idx) => {
+      const n = vecCross(vecSub(tri[1], tri[0]), vecSub(tri[2], tri[0]));
+      const fc = {
+        x: (tri[0].x + tri[1].x + tri[2].x) / 3,
+        y: (tri[0].y + tri[1].y + tri[2].y) / 3,
+        z: (tri[0].z + tri[1].z + tri[2].z) / 3
+      };
+      const ordered = vecDot(n, vecSub(fc, center)) >= 0 ? tri : [tri[0], tri[2], tri[1]];
+      return {
+        type: "pyramid",
+        seed: ((idx + seedOffset) * 53) % 19,
+        v: ordered
+      };
     });
   }
 
-  // 4. Контейнер для картонных тостов и картонного мини-попапа
+  const sphereTris = buildIcosphere(1.22);
+  const pyrLeftTris = buildPyramid(1.55, 1.48, 1);
+  const pyrRightTris = buildPyramid(1.75, 1.65, 5);
+  const lightDir = vecNorm({ x: -0.55, y: 0.72, z: -0.42 });
+
+  let width = 0;
+  let height = 0;
+  let mouseX = 0;
+  let mouseY = 0;
+  let smoothMX = 0;
+  let smoothMY = 0;
+
+  function resize() {
+    if (mode === "ps1") {
+      const targetW = Math.max(320, Math.min(480, Math.round(window.innerWidth / 3.4)));
+      width = targetW;
+      height = Math.max(180, Math.round(targetW * (window.innerHeight / window.innerWidth)));
+      canvas.classList.add("ps1");
+    } else {
+      const dpr = Math.min(window.devicePixelRatio || 1, 1.5);
+      width = Math.round(window.innerWidth * dpr);
+      height = Math.round(window.innerHeight * dpr);
+      canvas.classList.remove("ps1");
+    }
+    canvas.width = width;
+    canvas.height = height;
+    drawStaticBackdrop();
+  }
+
+  window.addEventListener("resize", resize);
+  window.addEventListener("mousemove", (e) => {
+    mouseX = (e.clientX / Math.max(1, window.innerWidth) - 0.5) * 2;
+    mouseY = (e.clientY / Math.max(1, window.innerHeight) - 0.5) * 2;
+  }, { passive: true });
+
+  function drawStaticBackdrop() {
+    const horizonY = Math.round(height * 0.44);
+    const sky = ctx.createLinearGradient(0, 0, 0, horizonY);
+    sky.addColorStop(0, "#0b121e");
+    sky.addColorStop(0.55, "#1b2a40");
+    sky.addColorStop(0.88, "#3e5775");
+    sky.addColorStop(1, "#a9d4ed");
+    ctx.fillStyle = sky;
+    ctx.fillRect(0, 0, width, horizonY);
+
+    const sea = ctx.createLinearGradient(0, horizonY, 0, height);
+    sea.addColorStop(0, "#7ab3d4");
+    sea.addColorStop(0.08, "#22364f");
+    sea.addColorStop(0.45, "#0d1624");
+    sea.addColorStop(1, "#05080f");
+    ctx.fillStyle = sea;
+    ctx.fillRect(0, horizonY, width, height - horizonY);
+  }
+
+  function syncModeUI() {
+    if (toggleBtn) {
+      toggleBtn.textContent = mode === "ps1" ? "3D: PS1" : (mode === "bryce" ? "3D: BRYCE" : "3D: OFF");
+    }
+    resize();
+  }
+
+  if (toggleBtn) {
+    toggleBtn.addEventListener("click", () => {
+      const next = MODES[(MODES.indexOf(mode) + 1) % MODES.length];
+      mode = next;
+      localStorage.setItem(MODE_KEY, mode);
+      syncModeUI();
+      if (window.showToast) {
+        const labels = {
+          ps1: "Low-Poly PS1 режим включен",
+          bryce: "Сглаженный Bryce 3D режим включен",
+          off: "3D рендер отключен"
+        };
+        window.showToast("Графика", labels[mode]);
+      }
+    });
+  }
+
+  function transformPoint(p, offset, rotY, rotX, reflect) {
+    const cosY = Math.cos(rotY);
+    const sinY = Math.sin(rotY);
+    const cosX = Math.cos(rotX);
+    const sinX = Math.sin(rotX);
+
+    const x1 = p.x * cosY - p.z * sinY;
+    const z1 = p.x * sinY + p.z * cosY;
+    const y2 = p.y * cosX - z1 * sinX;
+    const z2 = p.y * sinX + z1 * cosX;
+
+    const wx = x1 + offset.x;
+    const wy = (y2 + offset.y) * (reflect ? -1 : 1);
+    const wz = z2 + offset.z;
+    return { x: wx, y: wy, z: wz };
+  }
+
+  function renderTriangles(tris, offset, rotY, rotX, camPos, horizonY, fov, snap, reflect, time) {
+    const projected = [];
+
+    for (const tri of tris) {
+      const w0 = transformPoint(tri.v[0], offset, rotY, rotX, reflect);
+      const w1 = transformPoint(tri.v[1], offset, rotY, rotX, reflect);
+      const w2 = transformPoint(tri.v[2], offset, rotY, rotX, reflect);
+
+      const nRaw = vecCross(vecSub(w1, w0), vecSub(w2, w0));
+      const n = vecNorm(reflect ? { x: -nRaw.x, y: -nRaw.y, z: -nRaw.z } : nRaw);
+      const c = { x: (w0.x + w1.x + w2.x) / 3, y: (w0.y + w1.y + w2.y) / 3, z: (w0.z + w1.z + w2.z) / 3 };
+      const vDir = vecNorm(vecSub(camPos, c));
+      const facing = vecDot(n, vDir);
+      if (facing <= 0) continue;
+
+      const d0 = w0.z - camPos.z;
+      const d1 = w1.z - camPos.z;
+      const d2 = w2.z - camPos.z;
+      if (d0 <= 0.3 || d1 <= 0.3 || d2 <= 0.3) continue;
+
+      const s0 = fov / d0;
+      const s1 = fov / d1;
+      const s2 = fov / d2;
+
+      const wave = reflect ? Math.sin(time * 2.1 + c.y * 8 + tri.seed) * (snap > 1 ? 1.5 : 2.5) : 0;
+
+      function proj(w, s) {
+        let sx = width * 0.5 + (w.x - camPos.x) * s + wave;
+        let sy = horizonY - (w.y - camPos.y) * s;
+        if (snap > 1) {
+          sx = Math.round(sx / snap) * snap;
+          sy = Math.round(sy / snap) * snap;
+        }
+        return { x: sx, y: sy };
+      }
+
+      projected.push({
+        depth: (d0 + d1 + d2) / 3,
+        pts: [proj(w0, s0), proj(w1, s1), proj(w2, s2)],
+        n,
+        vDir,
+        facing,
+        tri
+      });
+    }
+
+    projected.sort((a, b) => b.depth - a.depth);
+
+    for (const item of projected) {
+      const { pts, n, vDir, facing, tri } = item;
+      let fill;
+      let stroke = null;
+
+      if (tri.type === "sphere") {
+        const inc = { x: -vDir.x, y: -vDir.y, z: -vDir.z };
+        const ndoti = vecDot(inc, n);
+        const refl = vecNorm({
+          x: inc.x - 2 * ndoti * n.x,
+          y: inc.y - 2 * ndoti * n.y,
+          z: inc.z - 2 * ndoti * n.z
+        });
+
+        const horizonBand = Math.exp(-Math.abs(refl.y) * 8.5);
+        const fresnel = Math.pow(1 - Math.max(0, facing), 2.1);
+        const spec = Math.pow(Math.max(0, vecDot(refl, lightDir)), 14);
+        const facetNoise = (tri.seed % 5) * 4;
+
+        let r, g, b;
+        if (refl.y > 0) {
+          const cloud = 0.5 + 0.5 * Math.sin(refl.x * 5 + refl.y * 4);
+          r = 46 + cloud * 48 + facetNoise;
+          g = 68 + cloud * 58 + facetNoise;
+          b = 98 + cloud * 65 + facetNoise;
+        } else {
+          const depthShade = Math.max(0, 1 + refl.y);
+          r = 16 + depthShade * 42 + facetNoise;
+          g = 34 + depthShade * 72 + facetNoise;
+          b = 54 + depthShade * 88 + facetNoise;
+        }
+
+        r += horizonBand * 125 + fresnel * 55 + spec * 130;
+        g += horizonBand * 165 + fresnel * 85 + spec * 145;
+        b += horizonBand * 185 + fresnel * 110 + spec * 155;
+
+        if (reflect) {
+          r *= 0.48;
+          g *= 0.56;
+          b *= 0.68;
+        }
+
+        fill = `rgb(${Math.min(245, Math.round(r))},${Math.min(250, Math.round(g))},${Math.min(255, Math.round(b))})`;
+        stroke = reflect ? "rgba(120, 195, 235, 0.08)" : "rgba(185, 232, 255, 0.16)";
+      } else {
+        const diff = Math.max(0, vecDot(n, lightDir));
+        const iceTone = (tri.seed % 7) * 5;
+        const horizonBounce = Math.max(0, 1 - Math.abs(n.y)) * 0.25;
+        let r = 34 + diff * 86 + horizonBounce * 55 + iceTone;
+        let g = 49 + diff * 102 + horizonBounce * 92 + iceTone;
+        let b = 68 + diff * 116 + horizonBounce * 118 + iceTone;
+
+        if (reflect) {
+          r *= 0.45;
+          g *= 0.54;
+          b *= 0.66;
+        }
+
+        fill = `rgb(${Math.min(235, Math.round(r))},${Math.min(245, Math.round(g))},${Math.min(255, Math.round(b))})`;
+        stroke = reflect ? "rgba(110, 180, 225, 0.12)" : "rgba(170, 224, 255, 0.25)";
+      }
+
+      ctx.beginPath();
+      ctx.moveTo(pts[0].x, pts[0].y);
+      ctx.lineTo(pts[1].x, pts[1].y);
+      ctx.lineTo(pts[2].x, pts[2].y);
+      ctx.closePath();
+      ctx.fillStyle = fill;
+      ctx.fill();
+      if (stroke) {
+        ctx.strokeStyle = stroke;
+        ctx.lineWidth = 1;
+        ctx.stroke();
+      }
+    }
+  }
+
+  let lastFrame = 0;
+
+  function renderFrame(now) {
+    requestAnimationFrame(renderFrame);
+    if (mode === "off") return;
+
+    const minDelta = mode === "ps1" ? 48 : 16;
+    if (now - lastFrame < minDelta) return;
+    lastFrame = now;
+
+    const t = now * 0.001;
+    smoothMX += (mouseX - smoothMX) * 0.06;
+    smoothMY += (mouseY - smoothMY) * 0.06;
+
+    const horizonY = Math.round(height * 0.44);
+    drawStaticBackdrop();
+
+    ctx.fillStyle = "rgba(190, 232, 255, 0.12)";
+    for (let i = 0; i < 6; i++) {
+      const cy = Math.round((horizonY * (0.12 + i * 0.14)) + Math.sin(t * 0.25 + i) * 4);
+      const ch = Math.max(2, Math.round(height * 0.035));
+      ctx.fillRect(0, cy, width, ch);
+    }
+
+    const fov = Math.min(width, height) * 1.18;
+    const camPos = {
+      x: smoothMX * 0.35,
+      y: 0.82 - smoothMY * 0.14,
+      z: -1.6
+    };
+    const snap = mode === "ps1" ? 1.5 : 0;
+    const xBase = width > height ? 1.25 : 0.4;
+    const bob = Math.sin(t * 1.15) * 0.12;
+
+    const pLeftOff = { x: xBase - 0.92, y: 0, z: 5.4 };
+    const pRightOff = { x: xBase + 0.96, y: 0, z: 5.65 };
+    const sphereOff = { x: xBase + 0.06, y: 2.88 + bob, z: 5.25 };
+
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(0, horizonY, width, height - horizonY);
+    ctx.clip();
+    renderTriangles(pyrLeftTris, pLeftOff, 0.45, 0, camPos, horizonY, fov, snap, true, t);
+    renderTriangles(pyrRightTris, pRightOff, -0.35, 0, camPos, horizonY, fov, snap, true, t);
+    renderTriangles(sphereTris, sphereOff, t * 0.28, t * 0.14, camPos, horizonY, fov, snap, true, t);
+
+    const waterVeil = ctx.createLinearGradient(0, horizonY, 0, height);
+    waterVeil.addColorStop(0, "rgba(130, 198, 235, 0.18)");
+    waterVeil.addColorStop(0.2, "rgba(14, 28, 46, 0.32)");
+    waterVeil.addColorStop(1, "rgba(5, 9, 16, 0.72)");
+    ctx.fillStyle = waterVeil;
+    ctx.fillRect(0, horizonY, width, height - horizonY);
+    ctx.restore();
+
+    ctx.fillStyle = "rgba(215, 244, 255, 0.85)";
+    ctx.fillRect(0, horizonY - 1, width, 2);
+
+    renderTriangles(pyrLeftTris, pLeftOff, 0.45, 0, camPos, horizonY, fov, snap, false, t);
+    renderTriangles(pyrRightTris, pRightOff, -0.35, 0, camPos, horizonY, fov, snap, false, t);
+    renderTriangles(sphereTris, sphereOff, t * 0.28, t * 0.14, camPos, horizonY, fov, snap, false, t);
+  }
+
+  syncModeUI();
+  requestAnimationFrame(renderFrame);
+
   const toastStack = document.createElement("div");
-  toastStack.className = "cb-toast-stack";
+  toastStack.className = "ice-toast-stack";
   document.body.appendChild(toastStack);
 
   const modalBackdrop = document.createElement("div");
-  modalBackdrop.className = "cb-modal-backdrop";
+  modalBackdrop.className = "ice-modal-backdrop";
   modalBackdrop.innerHTML = `
-    <div class="cb-note-popup" role="dialog" aria-modal="true">
-      <button type="button" class="cb-note-close" aria-label="Закрыть">&times;</button>
-      <div class="cb-note-tag crumple-soft" id="cb-note-tag">GD NOTE</div>
-      <div class="cb-note-title crumple-strong" id="cb-note-title">Заметка</div>
-      <div class="cb-note-text crumple-soft" id="cb-note-text"></div>
-      <div class="cb-note-grid" id="cb-note-grid"></div>
+    <div class="ice-modal" role="dialog" aria-modal="true">
+      <button type="button" class="ice-modal-close" aria-label="Закрыть">&times;</button>
+      <div class="ice-modal-tag" id="ice-modal-tag">INFO</div>
+      <div class="ice-modal-title" id="ice-modal-title">Заметка</div>
+      <div class="ice-modal-text" id="ice-modal-text"></div>
+      <div class="ice-modal-grid" id="ice-modal-grid"></div>
     </div>
   `;
   document.body.appendChild(modalBackdrop);
 
   modalBackdrop.addEventListener("click", (e) => {
-    if (e.target === modalBackdrop || e.target.closest(".cb-note-close")) {
+    if (e.target === modalBackdrop || e.target.closest(".ice-modal-close")) {
       modalBackdrop.classList.remove("open");
     }
   });
@@ -241,12 +480,12 @@ function idButtonHtml(id) {
     if (e.key === "Escape") modalBackdrop.classList.remove("open");
   });
 
-  window.showCardboardToast = function (title, body) {
+  window.showToast = function (title, body) {
     const toast = document.createElement("div");
-    toast.className = "cb-toast";
+    toast.className = "ice-toast";
     toast.innerHTML = `
-      <div class="cb-toast-title crumple-soft">${esc(title)}</div>
-      <div class="cb-toast-body crumple-soft">${esc(body)}</div>
+      <div class="ice-toast-title">${esc(title)}</div>
+      <div class="ice-toast-body">${esc(body)}</div>
     `;
     toastStack.appendChild(toast);
     while (toastStack.children.length > 3) {
@@ -258,18 +497,18 @@ function idButtonHtml(id) {
     }, 2400);
   };
 
-  window.openCardboardNote = function ({ tag = "CARDBOARD NOTE", title, text = "", stats = [] }) {
-    document.getElementById("cb-note-tag").textContent = tag;
-    document.getElementById("cb-note-title").textContent = title;
-    const textEl = document.getElementById("cb-note-text");
+  window.openInfoModal = function ({ tag = "INFO", title, text = "", stats = [] }) {
+    document.getElementById("ice-modal-tag").textContent = tag;
+    document.getElementById("ice-modal-title").textContent = title;
+    const textEl = document.getElementById("ice-modal-text");
     textEl.textContent = text;
     textEl.style.display = text ? "block" : "none";
 
-    const gridEl = document.getElementById("cb-note-grid");
+    const gridEl = document.getElementById("ice-modal-grid");
     gridEl.innerHTML = stats.map((s) => `
-      <div class="cb-note-stat">
+      <div class="ice-modal-stat">
         <span>${esc(s.label)}</span>
-        <strong class="crumple-soft">${esc(s.value)}</strong>
+        <strong>${esc(s.value)}</strong>
       </div>
     `).join("");
     gridEl.style.display = stats.length ? "grid" : "none";
@@ -281,8 +520,8 @@ function idButtonHtml(id) {
 const NOTE_PRESETS = {
   rules: {
     tag: "EWASION LIST // ПРАВИЛА",
-    title: "Картонная памятка",
-    text: "Кликай по ID уровня чтобы скопировать, нажимай на тиры (HELL/GOLD) или имена игроков, чтобы открыть картонные заметки!",
+    title: "Памятка по листу",
+    text: "Кликай по ID уровня, чтобы скопировать его в буфер, нажимай на тиры (HELL/GOLD) или на имена игроков для просмотра статистики.",
     stats: [
       { label: "Main Top", value: "0 - 1,000 pts" },
       { label: "Zoink Skill", value: "1K - 10K pts" },
@@ -293,7 +532,7 @@ const NOTE_PRESETS = {
   leaderboard: {
     tag: "SCORE SYSTEM",
     title: "Как считаются баллы",
-    text: "Main 100% даёт полные баллы. Если уровень ещё не верифицирован — лучший прогресс в Main и Zoink даёт % от баллов уровня.",
+    text: "Main 100% дает полные баллы. Если уровень еще не верифицирован, лучший прогресс в Main и Zoink дает % от баллов уровня.",
     stats: [
       { label: "Main Verify", value: "100% pts" },
       { label: "Zoink WR", value: "progress %" }
@@ -302,31 +541,31 @@ const NOTE_PRESETS = {
   HELL: {
     tag: "TIER #1 - #5",
     title: "HELL TIER",
-    text: "Пятёрка самых хардкорных уровней листа. Максимальный накал и самые жирные баллы.",
+    text: "Пятерка самых сложных уровней листа с максимальным количеством баллов.",
     stats: [{ label: "Позиции", value: "Top 1 - 5" }, { label: "Сложность", value: "Extreme" }]
   },
   GOLD: {
     tag: "TIER #6 - #10",
     title: "GOLD TIER",
-    text: "Золотая пятёрка элитных уровней сразу за Hell-зоной.",
-    stats: [{ label: "Позиции", value: "Top 6 - 10" }, { label: "Цвет", value: "GD Star" }]
+    text: "Пятерка уровней сразу после Hell-зоны.",
+    stats: [{ label: "Позиции", value: "Top 6 - 10" }]
   },
   SILVER: {
     tag: "TIER #11 - #15",
     title: "SILVER TIER",
-    text: "Крепкие уровни середины топа.",
+    text: "Уровни середины топа.",
     stats: [{ label: "Позиции", value: "Top 11 - 15" }]
   },
   BRONZE: {
     tag: "TIER #16 - #20",
     title: "BRONZE TIER",
-    text: "Отличная база для первых серьёзных поинтов в Main Top.",
+    text: "Хорошая база для набора первых очков в Main Top.",
     stats: [{ label: "Позиции", value: "Top 16 - 20" }]
   },
   ROCK: {
     tag: "TIER #21+",
     title: "ROCK TIER",
-    text: "Нижняя часть Main Top — идеально для разминки или рулетки.",
+    text: "Нижняя часть Main Top, отлично подходит для разминки или рулетки.",
     stats: [{ label: "Позиции", value: "Top 21+" }]
   },
   SKIP: {
@@ -346,7 +585,7 @@ document.addEventListener("click", (e) => {
     }
     copyBtn.textContent = "COPIED!";
     copyBtn.classList.add("copied");
-    window.showCardboardToast("ID скопирован!", `Уровень ${text} в буфере`);
+    window.showToast("ID скопирован", `Уровень ${text} в буфере`);
     setTimeout(() => {
       copyBtn.textContent = `ID: ${text}`;
       copyBtn.classList.remove("copied");
@@ -366,7 +605,7 @@ document.addEventListener("click", (e) => {
   const noteBtn = e.target.closest("[data-popup-note]");
   if (noteBtn) {
     const key = noteBtn.getAttribute("data-popup-note");
-    if (NOTE_PRESETS[key]) window.openCardboardNote(NOTE_PRESETS[key]);
+    if (NOTE_PRESETS[key]) window.openInfoModal(NOTE_PRESETS[key]);
     return;
   }
 
@@ -375,10 +614,10 @@ document.addEventListener("click", (e) => {
     const name = playerTrigger.getAttribute("data-player-card");
     const p = window._PLAYER_STATS[name];
     if (p) {
-      window.openCardboardNote({
-        tag: "GD PLAYER CARD",
+      window.openInfoModal({
+        tag: "PLAYER STATS",
         title: p.name,
-        text: `Общий счёт в Ewasion List: ${(p.mainPts + p.zoinkPts).toLocaleString("en-US")} pts.`,
+        text: `Общий счет в Ewasion List: ${(p.mainPts + p.zoinkPts).toLocaleString("en-US")} pts.`,
         stats: [
           { label: "Main Pts", value: p.mainPts.toLocaleString("en-US") },
           { label: "Zoink Pts", value: p.zoinkPts.toLocaleString("en-US") },
@@ -393,7 +632,7 @@ document.addEventListener("click", (e) => {
   const pillNote = e.target.closest("[data-note]");
   if (pillNote) {
     const key = pillNote.getAttribute("data-note");
-    if (NOTE_PRESETS[key]) window.openCardboardNote(NOTE_PRESETS[key]);
+    if (NOTE_PRESETS[key]) window.openInfoModal(NOTE_PRESETS[key]);
   }
 });
 
@@ -484,11 +723,11 @@ function initHome() {
 
   tbody.innerHTML = rows.map((p, i) => `
     <tr data-player-card="${esc(p.name)}" title="Открыть карточку игрока">
-      <td class="rank-cell crumple-soft">#${i + 1}</td>
-      <td><strong class="crumple-soft">${esc(p.name)}</strong></td>
+      <td class="rank-cell">#${i + 1}</td>
+      <td><strong>${esc(p.name)}</strong></td>
       <td class="pts-cell">${p.mainPts.toLocaleString("en-US")}</td>
       <td class="pts-cell">${p.zoinkPts.toLocaleString("en-US")}</td>
-      <td class="pts-cell" style="color: #6d28d9;">${p.total.toLocaleString("en-US")}</td>
+      <td class="pts-cell total-cell">${p.total.toLocaleString("en-US")}</td>
       <td>${p.clears}</td>
       <td>${p.beaten}</td>
       <td>${p.created}</td>
@@ -576,10 +815,10 @@ function initListPage() {
             ${thumbLayer}
             <div class="ill-body">
               <div class="ill-title-row">
-                <span class="ill-title crumple-strong">#${rank} ${esc(name)}</span>
-                ${wrText ? `<span class="ill-wr-pill crumple-soft${wrVerified ? " verified" : ""}">${esc(wrText)}</span>` : ""}
+                <span class="ill-title">#${rank} ${esc(name)}</span>
+                ${wrText ? `<span class="ill-wr-pill${wrVerified ? " verified" : ""}">${esc(wrText)}</span>` : ""}
               </div>
-              <div class="ill-creator crumple-soft">by ${esc(creator)}</div>
+              <div class="ill-creator">by ${esc(creator)}</div>
               <div class="ill-tags">
                 ${tagsHtml || ""}
                 ${idPill}
@@ -587,8 +826,8 @@ function initListPage() {
             </div>
             <div class="ill-right">
               <div>
-                <div class="ill-stat-top crumple-strong">${esc(rightTop)}</div>
-                <div class="ill-pts crumple-soft">${esc(ptsText || `${points.toLocaleString("en-US")} pts`)}</div>
+                <div class="ill-stat-top">${esc(rightTop)}</div>
+                <div class="ill-pts">${esc(ptsText || `${points.toLocaleString("en-US")} pts`)}</div>
               </div>
               <button class="details-btn" type="button" data-details>Show details \u25BE</button>
             </div>
@@ -632,8 +871,8 @@ function initListPage() {
         const attHolder = lvl.verifier || (lvl.best && lvl.best.player) || "";
 
         const tags = [
-          `<span class="ill-pill ill-pill-${lvl.tier} crumple-soft" data-note="${lvl.tier}" title="Кликни про тир">${lvl.tier}</span>`,
-          lvl.skip ? `<span class="ill-pill ill-pill-skip crumple-soft" data-note="SKIP" title="Правило 1">Skip Allowed</span>` : "",
+          `<span class="ill-pill ill-pill-${lvl.tier}" data-note="${lvl.tier}" title="Кликни про тир">${lvl.tier}</span>`,
+          lvl.skip ? `<span class="ill-pill ill-pill-skip" data-note="SKIP" title="Правило 1">Skip Allowed</span>` : "",
           attText ? `<span class="ill-pill ill-pill-att">Attempts: ${esc(attText)}</span>` : "",
           Array.isArray(lvl.victors) && lvl.victors.length ? `<span class="ill-pill">Victors: ${esc(victorsText)}</span>` : ""
         ].join("");
@@ -684,7 +923,7 @@ function initListPage() {
           `<span class="ill-pill">Standard TPS</span>`,
           `<span class="ill-pill">&le; 16 CPS</span>`,
           attText ? `<span class="ill-pill ill-pill-att">Attempts: ${esc(attText)}</span>` : "",
-          lvl.skip ? `<span class="ill-pill ill-pill-skip crumple-soft" data-note="SKIP">Skip Allowed</span>` : ""
+          lvl.skip ? `<span class="ill-pill ill-pill-skip" data-note="SKIP">Skip Allowed</span>` : ""
         ].join("");
 
         const details = `
@@ -829,10 +1068,10 @@ function initListPage() {
               </div>
               <div class="ill-body">
                 <div class="ill-title-row">
-                  <span class="ill-title crumple-strong">${esc(lvl.name)}</span>
-                  <span class="ill-wr-pill verified crumple-soft">${esc(DIFF_LABELS[lvl.diff] || lvl.diff)}</span>
+                  <span class="ill-title">${esc(lvl.name)}</span>
+                  <span class="ill-wr-pill verified">${esc(DIFF_LABELS[lvl.diff] || lvl.diff)}</span>
                 </div>
-                <div class="ill-creator crumple-soft">Beaten by: ${esc((lvl.victors || []).join(", "))}</div>
+                <div class="ill-creator">Beaten by: ${esc((lvl.victors || []).join(", "))}</div>
                 ${attPills ? `<div class="ill-tags">${attPills}</div>` : ""}
               </div>
               <div class="ill-right">
@@ -845,14 +1084,14 @@ function initListPage() {
     }).join("") : `<div class="card">Ничего не найдено</div>`;
   }
 
-  function switchTab(tab, showToast = false) {
+  function switchTab(tab, notify = false) {
     activeTab = tab;
     activeTier = "ALL";
     if (location.hash !== "#" + tab) history.replaceState(null, "", "#" + tab);
     renderFilters();
     renderCards();
-    if (showToast && META[tab]) {
-      window.showCardboardToast("Список переключён", META[tab].title);
+    if (notify && META[tab]) {
+      window.showToast("Список переключен", META[tab].title);
     }
   }
 
@@ -933,7 +1172,7 @@ function initRoulette() {
     saveState();
     render();
     if (notify) {
-      window.showCardboardToast("Новый забег!", `Пул: ${poolSel.options[poolSel.selectedIndex].text}`);
+      window.showToast("Новый забег", `Пул: ${poolSel.options[poolSel.selectedIndex].text}`);
     }
   }
 
@@ -944,7 +1183,7 @@ function initRoulette() {
       const achieved = Math.max(state.target, Math.min(100, percentVal));
       state.score += 1;
       state.log.unshift({ name: current.name, id: current.id, status: `${achieved}%`, ok: true });
-      window.showCardboardToast("GG! +1 Score", `${current.name} — ${achieved}%`);
+      window.showToast("GG! +1 Score", `${current.name}: ${achieved}%`);
       if (achieved >= 100 || state.index + 1 >= state.queue.length) {
         state.finished = true;
       } else {
@@ -953,7 +1192,7 @@ function initRoulette() {
       }
     } else {
       state.log.unshift({ name: current.name, id: current.id, status: `SKIP (${state.target}%)`, ok: false });
-      window.showCardboardToast("Скип!", `${current.name} пропущен`);
+      window.showToast("Скип", `${current.name} пропущен`);
       if (state.index + 1 >= state.queue.length) {
         state.finished = true;
       } else {
@@ -971,15 +1210,15 @@ function initRoulette() {
     logEl.innerHTML = state.log.length
       ? state.log.map((item) => `
         <li>
-          <span>${esc(item.name)} <span style="opacity: 0.7;">(${esc(item.id)})</span></span>
+          <span>${esc(item.name)} <span class="muted">(${esc(item.id)})</span></span>
           <span class="${item.ok ? "status-ok" : "status-skip"}">${esc(item.status)}</span>
         </li>`).join("")
-      : `<li style="opacity: 0.7;">Уровни еще не пройдены</li>`;
+      : `<li class="muted">Уровни еще не пройдены</li>`;
 
     if (state.finished) {
       stageEl.innerHTML = `
         <div class="card-title"><span>Забег завершен</span><span class="range-tag">${state.score} cleared</span></div>
-        <div class="r-target crumple-strong">${state.target >= 100 ? "100% WIN" : "STOP"}</div>
+        <div class="r-target">${state.target >= 100 ? "100% WIN" : "STOP"}</div>
         <p class="muted">Нажми «Новый забег», чтобы крутить дальше.</p>
       `;
       return;
@@ -992,14 +1231,14 @@ function initRoulette() {
         <span>${esc(lvl.source)}</span>
         <span class="range-tag">${state.index + 1} / ${state.queue.length}</span>
       </div>
-      <h2 class="crumple-strong gd-outline" style="font-size: 26px; margin-bottom: 8px;">${esc(lvl.name)}</h2>
-      <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-bottom: 12px;">
+      <h2 style="font-family: var(--display); font-size: 26px; color: var(--frost); margin-bottom: 8px;">${esc(lvl.name)}</h2>
+      <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-bottom: 14px;">
         ${idButtonHtml(lvl.id)}
-        ${lvl.creator ? `<span class="ill-creator crumple-soft" style="margin:0;">by ${esc(lvl.creator)}</span>` : ""}
-        ${lvl.skip ? `<span class="ill-pill ill-pill-skip crumple-soft" data-note="SKIP">SKIP ALLOWED</span>` : ""}
+        ${lvl.creator ? `<span class="ill-creator" style="margin:0;">by ${esc(lvl.creator)}</span>` : ""}
+        ${lvl.skip ? `<span class="ill-pill ill-pill-skip" data-note="SKIP">SKIP ALLOWED</span>` : ""}
       </div>
-      <div style="font-size: 12px; color: #cbd5e1;">Нужно сделать минимум:</div>
-      <div class="r-target crumple-strong">${state.target}%</div>
+      <div class="muted" style="font-size: 12px;">Нужно сделать минимум:</div>
+      <div class="r-target">${state.target}%</div>
       <div class="r-actions">
         <input id="r-percent-input" type="number" class="num-input" min="${state.target}" max="100" value="${stepHint}" style="width: 96px;">
         <button id="r-done-btn" class="btn btn-primary">Сделал (%)</button>
@@ -1007,10 +1246,16 @@ function initRoulette() {
       </div>
     `;
 
-    document.getElementById("r-done-btn").addEventListener("click", () => {
-      const val = parseInt(document.getElementById("r-percent-input").value, 10);
+    const pctInput = document.getElementById("r-percent-input");
+    const submitDone = () => {
+      const val = parseInt(pctInput.value, 10);
       if (Number.isNaN(val) || val < state.target || val > 100) return;
       stepNext(true, val);
+    };
+
+    document.getElementById("r-done-btn").addEventListener("click", submitDone);
+    pctInput.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") submitDone();
     });
     document.getElementById("r-skip-btn").addEventListener("click", () => stepNext(false, 0));
   }
