@@ -4,12 +4,18 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Roulette | Private GD List</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@600;700&family=JetBrains+Mono:wght@600;700;800&family=Rubik:wght@600;700;800;900&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="page.css">
 </head>
 <body>
   <header class="topbar">
     <div class="topbar-inner">
-      <a href="index.html" class="brand"><span class="brand-mark"></span>EWASION LIST</a>
+      <a href="index.html" class="brand">
+        <span class="gd-cube-icon"><span class="gd-cube-mouth"></span></span>
+        <span class="crumple-strong gd-outline-sm">EWASION LIST</span>
+      </a>
       <nav class="nav">
         <a href="index.html">Home</a>
         <a href="list.html#main">Main Top</a>
@@ -19,16 +25,17 @@
         <a href="list.html#beaten">Beaten</a>
         <a href="roulette.html" class="active">Roulette</a>
       </nav>
+      <button type="button" class="motion-toggle" id="motion-toggle">PAPER: 4 FPS</button>
     </div>
   </header>
 
   <main class="wrap" id="roulette-view">
     <div class="page-head">
       <div>
-        <h1>Demonlist Roulette</h1>
-        <p>Дойди до 100%, проходя случайные уровни с ростом требуемого процента</p>
+        <h1 class="crumple-strong">Demonlist Roulette</h1>
+        <p class="crumple-soft">Дойди до 100%, проходя случайные уровни с ростом требуемого процента</p>
       </div>
-      <div style="display: flex; gap: 8px; align-items: center;">
+      <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
         <select id="r-pool" class="select-input">
           <option value="main">Main Top</option>
           <option value="zoink">Zoink Skill</option>
@@ -43,8 +50,8 @@
       <div class="r-current" id="r-stage"></div>
       <div class="card">
         <div class="card-title">
-          <span>История забега</span>
-          <span id="r-score" class="range-tag">Score: 0</span>
+          <span class="crumple-soft">История забега</span>
+          <span id="r-score" class="range-tag crumple-soft">Score: 0</span>
         </div>
         <ul class="r-log" id="r-log"></ul>
       </div>

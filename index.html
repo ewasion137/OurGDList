@@ -4,12 +4,18 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Private GD List</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@600;700&family=JetBrains+Mono:wght@600;700;800&family=Rubik:wght@600;700;800;900&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="page.css">
 </head>
 <body>
   <header class="topbar">
     <div class="topbar-inner">
-      <a href="index.html" class="brand"><span class="brand-mark"></span>EWASION LIST</a>
+      <a href="index.html" class="brand">
+        <span class="gd-cube-icon"><span class="gd-cube-mouth"></span></span>
+        <span class="crumple-strong gd-outline-sm">EWASION LIST</span>
+      </a>
       <nav class="nav">
         <a href="index.html" class="active">Home</a>
         <a href="list.html#main">Main Top</a>
@@ -19,31 +25,35 @@
         <a href="list.html#beaten">Beaten</a>
         <a href="roulette.html">Roulette</a>
       </nav>
+      <button type="button" class="motion-toggle" id="motion-toggle">PAPER: 4 FPS</button>
     </div>
   </header>
 
   <main class="wrap" id="home-view">
     <div class="page-head">
       <div>
-        <h1>Private Demon & Challenge List</h1>
-        <p>Закрытый лист уровней, правила верификации и общий рейтинг игроков</p>
+        <h1 class="crumple-strong">Private Demon & Challenge List</h1>
+        <p class="crumple-soft">Закрытый лист уровней, правила верификации и общий рейтинг игроков</p>
       </div>
-      <a href="list.html#main" class="btn btn-primary">Открыть списки</a>
+      <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+        <button type="button" class="gd-spike-badge crumple-soft" data-popup-note="rules">Картонная памятка</button>
+        <a href="list.html#main" class="btn btn-primary">Открыть списки</a>
+      </div>
     </div>
 
-    <div class="card" style="margin-bottom: 16px;">
+    <div class="card" style="margin-bottom: 22px;">
       <div class="card-title">
-        <span>Allowed Creators</span>
-        <span class="range-tag">Friends Only</span>
+        <span class="crumple-soft">Allowed Creators</span>
+        <span class="range-tag crumple-soft">Friends Only</span>
       </div>
       <div class="creators-row">
-        <span class="pill">Miles_Fur</span>
-        <span class="pill">banbondir</span>
-        <span class="pill">Legendary (Zard)</span>
-        <span class="pill">ewasion (PsYhOpAtT)</span>
-        <span class="pill">tanker</span>
+        <span class="pill crumple-soft" data-player-card="Miles_Fur">Miles_Fur</span>
+        <span class="pill crumple-soft" data-player-card="banbondir">banbondir</span>
+        <span class="pill crumple-soft" data-player-card="Legendary">Legendary (Zard)</span>
+        <span class="pill crumple-soft" data-player-card="ewasion">ewasion (PsYhOpAtT)</span>
+        <span class="pill crumple-soft" data-player-card="tanker">tanker</span>
       </div>
-      <p class="muted" style="margin-top: 10px; font-size: 12px;">
+      <p class="crumple-soft" style="margin-top: 12px; font-family: var(--hand); font-size: 19px; font-weight: 700; line-height: 1.25;">
         Правило 1: длинное или пустое начало уровня без геймплея можно скипать через Speedhack, Noclip или Startpos, если вы стабильно проходите его 5 раз подряд. Noclip обязательно выключается сразу после конца секции (пример: Bevlynous, Nine Sonic).<br>
         Правило 3: предлагать и верифицировать уровни могут только друзья ewasion.
       </p>
@@ -52,10 +62,10 @@
     <div class="grid-3">
       <div class="card">
         <div class="card-title">
-          <span>Main Top</span>
-          <span class="range-tag">0 - 1,000 pts</span>
+          <span class="crumple-soft">Main Top</span>
+          <span class="range-tag crumple-soft">0 - 1,000 pts</span>
         </div>
-        <ul class="rules-list">
+        <ul class="rules-list crumple-soft">
           <li>Верификация минимум 0-60% уровня без читов.</li>
           <li>Уровень длиннее 5 секунд.</li>
           <li>Запрещены челленджи короче нормы и альт-спам быстрее 14 CPS.</li>
@@ -64,10 +74,10 @@
 
       <div class="card">
         <div class="card-title">
-          <span>Zoink Skill Top</span>
-          <span class="range-tag">1,000 - 10,000 pts</span>
+          <span class="crumple-soft">Zoink Skill Top</span>
+          <span class="range-tag crumple-soft">1,000 - 10,000 pts</span>
         </div>
-        <ul class="rules-list">
+        <ul class="rules-list crumple-soft">
           <li>Может быть не верифицирован, но нужен записанный макрос прохождения.</li>
           <li>Проходимость без смены TPS.</li>
           <li>Без спама быстрее 16 CPS.</li>
@@ -76,19 +86,19 @@
 
       <div class="card">
         <div class="card-title">
-          <span>Impossible Top</span>
-          <span class="range-tag">10,000 - 100,000 pts</span>
+          <span class="crumple-soft">Impossible Top</span>
+          <span class="range-tag crumple-soft">10,000 - 100,000 pts</span>
         </div>
-        <ul class="rules-list">
+        <ul class="rules-list crumple-soft">
           <li>Лимит до 6000 TPS включительно.</li>
           <li>Обязателен записанный макрос полного прохождения.</li>
         </ul>
       </div>
     </div>
 
-    <div class="card-title" style="margin-bottom: 8px;">
-      <span>Players Leaderboard</span>
-      <span class="muted">Main 100% + Main / Zoink progress %</span>
+    <div class="card-title" style="margin-bottom: 10px; padding: 0 4px;">
+      <span class="crumple-strong gd-outline-sm" style="font-size: 17px;">Players Leaderboard</span>
+      <span class="gd-spike-badge crumple-soft" data-popup-note="leaderboard">Кликни по игроку = досье</span>
     </div>
     <div class="table-wrap">
       <table>

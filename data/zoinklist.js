@@ -103,7 +103,7 @@ window.ZOINK_LIST = [
         name: "perfect time",
         id: "134952051",
         creator: "Legendary",
-        best: { player: "Legendary", percent: 12.48 },
+        best: { player: "ewasion", percent: 13.17 },
         points: 2100,
     },
     {

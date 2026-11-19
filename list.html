@@ -4,12 +4,18 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Lists | Private GD List</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@600;700&family=JetBrains+Mono:wght@600;700;800&family=Rubik:wght@600;700;800;900&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="page.css">
 </head>
 <body>
   <header class="topbar">
     <div class="topbar-inner">
-      <a href="index.html" class="brand"><span class="brand-mark"></span>EWASION LIST</a>
+      <a href="index.html" class="brand">
+        <span class="gd-cube-icon"><span class="gd-cube-mouth"></span></span>
+        <span class="crumple-strong gd-outline-sm">EWASION LIST</span>
+      </a>
       <nav class="nav">
         <a href="index.html">Home</a>
         <a href="list.html#main" data-nav="main">Main Top</a>
@@ -19,14 +25,15 @@
         <a href="list.html#beaten" data-nav="beaten">Beaten</a>
         <a href="roulette.html">Roulette</a>
       </nav>
+      <button type="button" class="motion-toggle" id="motion-toggle">PAPER: 4 FPS</button>
     </div>
   </header>
 
   <main class="wrap" id="list-view">
     <div class="page-head">
       <div>
-        <h1 id="list-title">Main Top</h1>
-        <p id="list-subtitle">Сортировка по убыванию баллов (0 - 1,000)</p>
+        <h1 id="list-title" class="crumple-strong">Main Top</h1>
+        <p id="list-subtitle" class="crumple-soft">Сортировка по убыванию баллов (0 - 1,000)</p>
       </div>
       <div class="tabs" id="list-tabs" style="margin-bottom: 0;">
         <button class="tab-btn" data-tab="main">Main Top</button>

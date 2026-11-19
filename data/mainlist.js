@@ -167,7 +167,7 @@ window.MAIN_LIST = [
         id: "117081745",
         creator: "ewasion",
         verifier: "Legendary",
-        victors: [],
+        victors: ["ewasion"],
         points: 350,
     },
     {
