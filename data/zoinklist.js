@@ -40,6 +40,7 @@ window.ZOINK_LIST = [
         creator: "Legendary",
         best: null,
         points: 7000,
+        skip: true,
     },
     {
         name: "Nine Sonic",
@@ -55,6 +56,7 @@ window.ZOINK_LIST = [
         creator: "Legendary",
         best: { player: "ewasion", percent: 29.53 },
         points: 4300,
+        skip: true,
     },
     {
         name: "WAVE",
