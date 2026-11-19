@@ -1,9 +1,9 @@
 const CREATORS = ["Miles_Fur", "banbondir", "Legendary", "ewasion", "tanker"];
 
 const DEMON_ICONS = {
-    M: "https://static.wikia.nocookie.net/geometry-dash-unofficial/images/d/d8/Medium_Demon.png/revision/latest?cb=20180707082309",
-    H: "https://static.wikia.nocookie.net/geometry-dash-unofficial/images/4/48/Hard_Demon.png/revision/latest?cb=20180130191113",
-    I: "https://upload.wikimedia.org/wikipedia/commons/a/ae/Insane_Demon_Icon.webp?utm_source=commons.wikimedia.org&utm_campaign=index&utm_content=original",
+  M: "https://static.wikia.nocookie.net/geometry-dash-unofficial/images/d/d8/Medium_Demon.png/revision/latest?cb=20180707082309",
+  H: "https://static.wikia.nocookie.net/geometry-dash-unofficial/images/4/48/Hard_Demon.png/revision/latest?cb=20180130191113",
+  I: "https://upload.wikimedia.org/wikipedia/commons/a/ae/Insane_Demon_Icon.webp?utm_source=commons.wikimedia.org&utm_campaign=index&utm_content=original"
 };
 
 const DIFF_LABELS = {
@@ -32,23 +32,37 @@ function getTier(rank) {
   return "ROCK";
 }
 
+function isVideoThumb(path) {
+  return /\.(mp4|webm|mov|m4v)(\?.*)?$/i.test(String(path || ""));
+}
+
 function idButtonHtml(id) {
-  return `<button class="id-btn" type="button" data-copy="${esc(id)}">${esc(id)}</button>`;
+  return `<button class="id-btn" type="button" data-copy="${esc(id)}">ID: ${esc(id)}</button>`;
 }
 
 document.addEventListener("click", (e) => {
-  const btn = e.target.closest("[data-copy]");
-  if (!btn) return;
-  const text = btn.getAttribute("data-copy");
-  if (navigator.clipboard && navigator.clipboard.writeText) {
-    navigator.clipboard.writeText(text).catch(() => {});
+  const copyBtn = e.target.closest("[data-copy]");
+  if (copyBtn) {
+    const text = copyBtn.getAttribute("data-copy");
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).catch(() => {});
+    }
+    copyBtn.textContent = "COPIED";
+    copyBtn.classList.add("copied");
+    setTimeout(() => {
+      copyBtn.textContent = `ID: ${text}`;
+      copyBtn.classList.remove("copied");
+    }, 900);
+    return;
   }
-  btn.textContent = "COPIED";
-  btn.classList.add("copied");
-  setTimeout(() => {
-    btn.textContent = text;
-    btn.classList.remove("copied");
-  }, 900);
+
+  const detBtn = e.target.closest("[data-details]");
+  if (detBtn) {
+    const card = detBtn.closest(".ill-card");
+    if (!card) return;
+    const isOpen = card.classList.toggle("open");
+    detBtn.textContent = isOpen ? "Hide details \u25B4" : "Show details \u25BE";
+  }
 });
 
 function initHome() {
@@ -154,8 +168,7 @@ function initListPage() {
 
   const titleEl = document.getElementById("list-title");
   const subEl = document.getElementById("list-subtitle");
-  const headEl = document.getElementById("list-head");
-  const bodyEl = document.getElementById("list-body");
+  const containerEl = document.getElementById("list-container");
   const searchEl = document.getElementById("search-box");
   const filtersEl = document.getElementById("tier-filters");
   const tabBtns = document.querySelectorAll("[data-tab]");
@@ -188,18 +201,70 @@ function initListPage() {
     ).join("");
   }
 
-  function formatStatus(lvl) {
-    if (lvl.verifier) {
-      const vList = Array.isArray(lvl.victors) && lvl.victors.length ? ` | Victors: ${lvl.victors.join(", ")}` : "";
-      return `<strong>Verified (${esc(lvl.verifier)})</strong><span class="muted">${esc(vList)}</span>`;
+  function buildCardHtml(opts) {
+    const { rank, name, creator, id, points, tier, topClass, wrText, wrVerified, rightTop, tagsHtml, detailsHtml, thumb, hasThumb } = opts;
+    const mediaSrc = thumb ? esc(encodeURI(thumb)) : "";
+    const isVid = isVideoThumb(thumb);
+
+    let bgLayer = "";
+    if (hasThumb && thumb) {
+      bgLayer = isVid
+        ? `<video class="ill-bg-img" src="${mediaSrc}" autoplay loop muted playsinline preload="metadata" onerror="this.style.display='none'"></video><div class="ill-bg-overlay"></div>`
+        : `<img class="ill-bg-img" src="${mediaSrc}" alt="" onerror="this.style.display='none'"><div class="ill-bg-overlay"></div>`;
     }
-    if (lvl.best) {
-      return `<span style="color: var(--gold)">${lvl.best.percent}% (${esc(lvl.best.player)})</span>`;
+
+    let thumbLayer = "";
+    if (hasThumb) {
+      if (!thumb) {
+        thumbLayer = `<div class="ill-thumb no-img"></div>`;
+      } else if (isVid) {
+        thumbLayer = `<div class="ill-thumb"><video src="${mediaSrc}" autoplay loop muted playsinline preload="metadata" onerror="this.parentElement.classList.add('no-img'); this.remove();"></video></div>`;
+      } else {
+        thumbLayer = `<div class="ill-thumb"><img src="${mediaSrc}" alt="${esc(name)}" onerror="this.parentElement.classList.add('no-img'); this.remove();"></div>`;
+      }
     }
-    return `<span class="muted">None</span>`;
+
+    const clipLink = isVid && thumb
+      ? `<div class="detail-item"><span class="detail-label">Preview Clip</span><a href="${mediaSrc}" target="_blank" style="color: var(--ok);">Open MP4</a></div>`
+      : "";
+
+    return `
+      <article class="ill-card${hasThumb ? "" : " compact"}${tier ? ` tier-${tier}` : ""}${topClass ? ` ${topClass}` : ""}">
+        ${bgLayer}
+        <div class="ill-main">
+          ${thumbLayer}
+          <div class="ill-body">
+            <div class="ill-title-row">
+              <span class="ill-title">#${rank} ${esc(name)}</span>
+              ${wrText ? `<span class="ill-wr-pill${wrVerified ? " verified" : ""}">${esc(wrText)}</span>` : ""}
+            </div>
+            <div class="ill-creator">by ${esc(creator)}</div>
+            <div class="ill-tags">
+              ${tagsHtml || ""}
+              ${idButtonHtml(id)}
+            </div>
+          </div>
+          <div class="ill-right">
+            <div>
+              <div class="ill-stat-top">${esc(rightTop)}</div>
+              <div class="ill-pts">${points.toLocaleString("en-US")} pts</div>
+            </div>
+            <button class="details-btn" type="button" data-details>Show details \u25BE</button>
+          </div>
+        </div>
+        <div class="ill-details">
+          ${detailsHtml}
+          ${clipLink}
+          <div class="detail-item">
+            <span class="detail-label">GDBrowser</span>
+            <a href="https://gdbrowser.com/${esc(id)}" target="_blank" rel="noopener" style="color: #93c5fd;">gdbrowser.com/${esc(id)}</a>
+          </div>
+        </div>
+      </article>
+    `;
   }
 
-  function renderTable() {
+  function renderCards() {
     const meta = META[activeTab];
     titleEl.textContent = meta.title;
     subEl.textContent = meta.sub;
@@ -210,92 +275,96 @@ function initListPage() {
     const q = query.trim().toLowerCase();
 
     if (activeTab === "main") {
-      headEl.innerHTML = `
-        <tr>
-          <th>Top</th>
-          <th>Tier</th>
-          <th>Level</th>
-          <th>Creator</th>
-          <th>Status / Victors</th>
-          <th>Points</th>
-          <th>ID</th>
-        </tr>`;
-
       const rows = getSorted(window.MAIN_LIST || [])
         .map((lvl, idx) => ({ ...lvl, rank: idx + 1, tier: getTier(idx + 1) }))
         .filter((lvl) => {
           if (activeTier !== "ALL" && lvl.tier !== activeTier) return false;
           if (!q) return true;
-          const hay = [lvl.name, lvl.id, lvl.creator, lvl.verifier, ...(lvl.victors || [])].join(" ").toLowerCase();
-          return hay.includes(q);
+          return [lvl.name, lvl.id, lvl.creator, lvl.verifier, ...(lvl.victors || [])].join(" ").toLowerCase().includes(q);
         });
 
-      bodyEl.innerHTML = rows.length ? rows.map((lvl) => `
-        <tr class="tier-${lvl.tier}${lvl.rank === 1 ? " top-1" : ""}">
-          <td class="rank-cell">#${lvl.rank}</td>
-          <td><span class="tier-badge badge-${lvl.tier}">${lvl.tier}</span></td>
-          <td>
-            <div class="lvl-name">
-              <span>${esc(lvl.name)}</span>
-              ${lvl.skip ? '<span class="skip-tag">SKIP</span>' : ""}
-            </div>
-          </td>
-          <td>${esc(lvl.creator)}</td>
-          <td>${formatStatus(lvl)}</td>
-          <td class="pts-cell">${lvl.points.toLocaleString("en-US")}</td>
-          <td>${idButtonHtml(lvl.id)}</td>
-        </tr>
-      `).join("") : `<tr><td colspan="7" class="muted">Ничего не найдено</td></tr>`;
+      containerEl.innerHTML = rows.length ? rows.map((lvl) => {
+        const hasThumb = lvl.rank <= 3;
+        const wrText = lvl.verifier
+          ? `Verified: ${lvl.verifier}`
+          : (lvl.best ? `Best: ${lvl.best.percent}% (${lvl.best.player})` : "Unverified");
+        const victorsText = Array.isArray(lvl.victors) && lvl.victors.length ? lvl.victors.join(", ") : "None";
+        const tags = [
+          `<span class="ill-pill ill-pill-${lvl.tier}">${lvl.tier}</span>`,
+          lvl.skip ? `<span class="ill-pill ill-pill-skip">Skip Allowed</span>` : "",
+          Array.isArray(lvl.victors) && lvl.victors.length ? `<span class="ill-pill">Victors: ${esc(victorsText)}</span>` : ""
+        ].join("");
+
+        const details = `
+          <div class="detail-item"><span class="detail-label">Verifier</span><span>${esc(lvl.verifier || "Unverified")}</span></div>
+          <div class="detail-item"><span class="detail-label">Victors</span><span>${esc(victorsText)}</span></div>
+          <div class="detail-item"><span class="detail-label">Rule 1 Skip</span><span>${lvl.skip ? "Allowed" : "No"}</span></div>
+          ${lvl.video ? `<div class="detail-item"><span class="detail-label">Video</span><a href="${esc(lvl.video)}" target="_blank" rel="noopener" style="color: var(--ok);">Watch</a></div>` : ""}
+        `;
+
+        return buildCardHtml({
+          rank: lvl.rank,
+          name: lvl.name,
+          creator: lvl.creator,
+          id: lvl.id,
+          points: lvl.points || 0,
+          tier: lvl.tier,
+          topClass: lvl.rank === 1 ? "top-1" : "",
+          wrText,
+          wrVerified: Boolean(lvl.verifier),
+          rightTop: lvl.verifier ? "VERIFIED" : (lvl.best ? `${lvl.best.percent}%` : "OPEN"),
+          tagsHtml: tags,
+          detailsHtml: details,
+          thumb: lvl.thumb,
+          hasThumb
+        });
+      }).join("") : `<div class="card muted">Ничего не найдено</div>`;
       return;
     }
 
     if (activeTab === "zoink") {
-      headEl.innerHTML = `
-        <tr>
-          <th>Top</th>
-          <th>Level</th>
-          <th>Creator</th>
-          <th>Best Progress</th>
-          <th>Points</th>
-          <th>ID</th>
-        </tr>`;
-
       const rows = getSorted(window.ZOINK_LIST || [])
         .map((lvl, idx) => ({ ...lvl, rank: idx + 1 }))
         .filter((lvl) => {
           if (!q) return true;
-          const hay = [lvl.name, lvl.id, lvl.creator, lvl.best ? lvl.best.player : ""].join(" ").toLowerCase();
-          return hay.includes(q);
+          return [lvl.name, lvl.id, lvl.creator, lvl.best ? lvl.best.player : ""].join(" ").toLowerCase().includes(q);
         });
 
-      bodyEl.innerHTML = rows.length ? rows.map((lvl) => `
-        <tr class="${lvl.rank === 1 ? "top-1 top-1-zoink" : ""}">
-          <td class="rank-cell">#${lvl.rank}</td>
-          <td>
-            <div class="lvl-name">
-              <span>${esc(lvl.name)}</span>
-              ${lvl.skip ? '<span class="skip-tag">SKIP</span>' : ""}
-            </div>
-          </td>
-          <td>${esc(lvl.creator)}</td>
-          <td>${lvl.best ? `${lvl.best.percent}% (${esc(lvl.best.player)})` : '<span class="muted">None</span>'}</td>
-          <td class="pts-cell">${lvl.points.toLocaleString("en-US")}</td>
-          <td>${idButtonHtml(lvl.id)}</td>
-        </tr>
-      `).join("") : `<tr><td colspan="6" class="muted">Ничего не найдено</td></tr>`;
+      containerEl.innerHTML = rows.length ? rows.map((lvl) => {
+        const hasThumb = lvl.rank <= 3;
+        const wrText = lvl.best ? `WR: ${lvl.best.percent}% (${lvl.best.player})` : "No progress";
+        const tags = [
+          `<span class="ill-pill">Standard TPS</span>`,
+          `<span class="ill-pill">&le; 16 CPS</span>`,
+          lvl.skip ? `<span class="ill-pill ill-pill-skip">Skip Allowed</span>` : ""
+        ].join("");
+
+        const details = `
+          <div class="detail-item"><span class="detail-label">Best Run</span><span>${esc(wrText)}</span></div>
+          <div class="detail-item"><span class="detail-label">Rule 1 Skip</span><span>${lvl.skip ? "Allowed" : "No"}</span></div>
+          ${lvl.video ? `<div class="detail-item"><span class="detail-label">Macro / Video</span><a href="${esc(lvl.video)}" target="_blank" rel="noopener" style="color: var(--ok);">Watch</a></div>` : ""}
+        `;
+
+        return buildCardHtml({
+          rank: lvl.rank,
+          name: lvl.name,
+          creator: lvl.creator,
+          id: lvl.id,
+          points: lvl.points || 0,
+          topClass: lvl.rank === 1 ? "top-1 top-1-zoink" : "",
+          wrText,
+          wrVerified: false,
+          rightTop: lvl.best ? `${lvl.best.percent}%` : "0%",
+          tagsHtml: tags,
+          detailsHtml: details,
+          thumb: lvl.thumb,
+          hasThumb
+        });
+      }).join("") : `<div class="card muted">Ничего не найдено</div>`;
       return;
     }
 
     if (activeTab === "impossible") {
-      headEl.innerHTML = `
-        <tr>
-          <th>Top</th>
-          <th>Level</th>
-          <th>Creator</th>
-          <th>Points</th>
-          <th>ID</th>
-        </tr>`;
-
       const rows = getSorted(window.IMPOS_LIST || [])
         .map((lvl, idx) => ({ ...lvl, rank: idx + 1 }))
         .filter((lvl) => {
@@ -303,26 +372,37 @@ function initListPage() {
           return [lvl.name, lvl.id, lvl.creator].join(" ").toLowerCase().includes(q);
         });
 
-      bodyEl.innerHTML = rows.length ? rows.map((lvl) => `
-        <tr class="${lvl.rank === 1 ? "top-1 top-1-impos" : ""}">
-          <td class="rank-cell">#${lvl.rank}</td>
-          <td><div class="lvl-name"><span>${esc(lvl.name)}</span></div></td>
-          <td>${esc(lvl.creator)}</td>
-          <td class="pts-cell">${lvl.points.toLocaleString("en-US")}</td>
-          <td>${idButtonHtml(lvl.id)}</td>
-        </tr>
-      `).join("") : `<tr><td colspan="5" class="muted">Ничего не найдено</td></tr>`;
+      containerEl.innerHTML = rows.length ? rows.map((lvl) => {
+        const hasThumb = lvl.rank <= 3;
+        const tpsText = lvl.tps ? `${lvl.tps} TPS` : "Macro";
+        const tags = [
+          `<span class="ill-pill">&le; 6000 TPS</span>`,
+          `<span class="ill-pill">Macro Verified</span>`
+        ].join("");
+
+        const details = `
+          <div class="detail-item"><span class="detail-label">TPS</span><span>${esc(tpsText)}</span></div>
+          ${lvl.video ? `<div class="detail-item"><span class="detail-label">Macro</span><a href="${esc(lvl.video)}" target="_blank" rel="noopener" style="color: var(--ok);">Watch</a></div>` : ""}
+        `;
+
+        return buildCardHtml({
+          rank: lvl.rank,
+          name: lvl.name,
+          creator: lvl.creator,
+          id: lvl.id,
+          points: lvl.points || 0,
+          topClass: lvl.rank === 1 ? "top-1 top-1-impos" : "",
+          wrText: "Impossible List",
+          wrVerified: false,
+          rightTop: tpsText,
+          tagsHtml: tags,
+          detailsHtml: details,
+          thumb: lvl.thumb,
+          hasThumb
+        });
+      }).join("") : `<div class="card muted">Ничего не найдено</div>`;
       return;
     }
-
-    headEl.innerHTML = `
-      <tr>
-        <th>#</th>
-        <th>Difficulty</th>
-        <th>Level</th>
-        <th>Victors</th>
-        <th>ID</th>
-      </tr>`;
 
     const rows = (window.BEATEN_LIST || [])
       .map((lvl, idx) => ({ ...lvl, rank: idx + 1 }))
@@ -331,17 +411,25 @@ function initListPage() {
         return [lvl.name, lvl.id, ...(lvl.victors || [])].join(" ").toLowerCase().includes(q);
       });
 
-    bodyEl.innerHTML = rows.length ? rows.map((lvl) => `
-      <tr>
-        <td class="rank-cell">#${lvl.rank}</td>
-        <td>
-          <img class="demon-icon" referrerpolicy="no-referrer" src="${esc(DEMON_ICONS[lvl.diff])}" alt="${esc(DIFF_LABELS[lvl.diff] || lvl.diff)}" title="${esc(DIFF_LABELS[lvl.diff] || lvl.diff)}">
-        </td>
-        <td><strong>${esc(lvl.name)}</strong></td>
-        <td>${esc((lvl.victors || []).join(", "))}</td>
-        <td>${idButtonHtml(lvl.id)}</td>
-      </tr>
-    `).join("") : `<tr><td colspan="5" class="muted">Ничего не найдено</td></tr>`;
+    containerEl.innerHTML = rows.length ? rows.map((lvl) => `
+      <article class="ill-card compact">
+        <div class="ill-main" style="align-items: center;">
+          <div class="demon-slot">
+            <img class="demon-icon" referrerpolicy="no-referrer" src="${esc(DEMON_ICONS[lvl.diff] || "")}" alt="${esc(DIFF_LABELS[lvl.diff] || lvl.diff)}" title="${esc(DIFF_LABELS[lvl.diff] || lvl.diff)}">
+          </div>
+          <div class="ill-body">
+            <div class="ill-title-row">
+              <span class="ill-title">${esc(lvl.name)}</span>
+              <span class="ill-wr-pill verified">${esc(DIFF_LABELS[lvl.diff] || lvl.diff)}</span>
+            </div>
+            <div class="ill-creator">Beaten by: ${esc((lvl.victors || []).join(", "))}</div>
+          </div>
+          <div class="ill-right">
+            ${idButtonHtml(lvl.id)}
+          </div>
+        </div>
+      </article>
+    `).join("") : `<div class="card muted">Ничего не найдено</div>`;
   }
 
   function switchTab(tab) {
@@ -349,7 +437,7 @@ function initListPage() {
     activeTier = "ALL";
     if (location.hash !== "#" + tab) history.replaceState(null, "", "#" + tab);
     renderFilters();
-    renderTable();
+    renderCards();
   }
 
   tabBtns.forEach((btn) => btn.addEventListener("click", () => switchTab(btn.dataset.tab)));
@@ -358,11 +446,11 @@ function initListPage() {
     if (!btn) return;
     activeTier = btn.dataset.tier;
     renderFilters();
-    renderTable();
+    renderCards();
   });
   searchEl.addEventListener("input", (e) => {
     query = e.target.value;
-    renderTable();
+    renderCards();
   });
   window.addEventListener("hashchange", () => switchTab(getTabFromHash()));
 
@@ -487,7 +575,7 @@ function initRoulette() {
       <div style="display: flex; gap: 10px; align-items: center; margin-bottom: 12px;">
         ${idButtonHtml(lvl.id)}
         ${lvl.creator ? `<span class="muted">by ${esc(lvl.creator)}</span>` : ""}
-        ${lvl.skip ? `<span class="skip-tag">SKIP ALLOWED</span>` : ""}
+        ${lvl.skip ? `<span class="ill-pill ill-pill-skip">SKIP ALLOWED</span>` : ""}
       </div>
       <div class="muted" style="font-size: 12px;">Нужно сделать минимум:</div>
       <div class="r-target">${state.target}%</div>
