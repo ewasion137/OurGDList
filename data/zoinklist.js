@@ -1,45 +1,108 @@
 window.ZOINK_LIST = [
-  { name: "Abhorrence", id: "146629560", creator: "ewasion", best: { player: "ewasion", percent: 4.25
-    }, points: 10000
-  },
-  { name: "Hardest Challenge", id: "148537628", creator: "ewasion", best: { player: "ewasion", percent: 8.65
-    }, points: 9200
-  },
-  { name: "MPA3b", id: "146234982", creator: "ewasion", best: { player: "ewasion", percent: 6.82
-    }, points: 8500
-  },
-  { name: "Speechless Extincion", id: "126226178", creator: "ewasion", best: { player: "ewasion", percent: 4.62
-    }, points: 7800
-  },
-  { name: "KONTRA CITY", id: "102403652", creator: "ewasion", best: { player: "ewasion", percent: 5
-    }, points: 7200
-  },
-  { name: "iv dev ybf 2", id: "150828078", creator: "Legendary", best: null, points: 6600
-  },
-  { name: "HELPMEIMSUICIDAL", id: "151674373", creator: "ewasion", best: null, points: 6000
-  },
-  { name: "Nine Sonic", id: "135454742", creator: "Legendary", best: { player: "ewasion", percent: 21.73
-    }, points: 5400, skip: true
-  },
-  { name: "Nine Sonic Pt 2", id: "150264569", creator: "Legendary", best: { player: "ewasion", percent: 29.53
-    }, points: 4800
-  },
-  { name: "WAVE", id: "150097527", creator: "ewasion", best: { player: "ewasion", percent: 15.04
-    }, points: 4200
-  },
-  { name: "Impossible Challenge", id: "101321768", creator: "ewasion", best: { player: "ewasion", percent: 54
-    }, points: 3600
-  },
-  { name: "slow", id: "150097621", creator: "ewasion", best: { player: "ewasion", percent: 18.72
-    }, points: 3100
-  },
-  { name: "The Wave Of Doom", id: "131234783", creator: "ewasion", best: { player: "ewasion", percent: 20.02
-    }, points: 2600
-  },
-  { name: "perfect time", id: "134952051", creator: "Legendary", best: { player: "Legendary", percent: 12.48
-    }, points: 2100
-  },
-  { name: "Try This Pt 1", id: "125920883", creator: "ewasion", best: { player: "ewasion", percent: 25.84
-    }, points: 1600
-  }
+    {
+        name: "Abhorrence",
+        id: "146629560",
+        creator: "ewasion",
+        best: { player: "ewasion", percent: 4.25 },
+        points: 10000,
+    },
+    {
+        name: "Hardest Challenge",
+        id: "148537628",
+        creator: "ewasion",
+        best: { player: "ewasion", percent: 8.65 },
+        points: 9800,
+    },
+    {
+        name: "MPA3b",
+        id: "146234982",
+        creator: "ewasion",
+        best: { player: "ewasion", percent: 6.82 },
+        points: 9000,
+    },
+    {
+        name: "Speechless Extincion",
+        id: "126226178",
+        creator: "ewasion",
+        best: { player: "ewasion", percent: 4.62 },
+        points: 8900,
+    },
+    {
+        name: "KONTRA CITY",
+        id: "102403652",
+        creator: "ewasion",
+        best: { player: "ewasion", percent: 5 },
+        points: 7200,
+    },
+    {
+        name: "iv dev ybf 2",
+        id: "150828078",
+        creator: "Legendary",
+        best: null,
+        points: 7000,
+    },
+    {
+        name: "Nine Sonic",
+        id: "135454742",
+        creator: "Legendary",
+        best: { player: "ewasion", percent: 21.73 },
+        points: 4400,
+        skip: true,
+    },
+    {
+        name: "Nine Sonic Pt 2",
+        id: "150264569",
+        creator: "Legendary",
+        best: { player: "ewasion", percent: 29.53 },
+        points: 4300,
+    },
+    {
+        name: "WAVE",
+        id: "150097527",
+        creator: "ewasion",
+        best: { player: "ewasion", percent: 15.04 },
+        points: 4200,
+    },
+    {
+        name: "Impossible Challenge",
+        id: "101321768",
+        creator: "ewasion",
+        best: { player: "ewasion", percent: 54 },
+        points: 3600,
+    },
+    {
+        name: "slow",
+        id: "150097621",
+        creator: "ewasion",
+        best: { player: "ewasion", percent: 18.72 },
+        points: 3100,
+    },
+    {
+        name: "HELPMEIMSUICIDAL",
+        id: "151674373",
+        creator: "ewasion",
+        best: null,
+        points: 3000,
+    },
+    {
+        name: "The Wave Of Doom",
+        id: "131234783",
+        creator: "ewasion",
+        best: { player: "ewasion", percent: 20.02 },
+        points: 2900,
+    },
+    {
+        name: "perfect time",
+        id: "134952051",
+        creator: "Legendary",
+        best: { player: "Legendary", percent: 12.48 },
+        points: 2100,
+    },
+    {
+        name: "Try This Pt 1",
+        id: "125920883",
+        creator: "ewasion",
+        best: { player: "ewasion", percent: 25.84 },
+        points: 1600,
+    },
 ];
