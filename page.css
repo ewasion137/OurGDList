@@ -858,3 +858,9 @@ tr:last-child td {
 .ill-card.top-1-unfinished .ill-title {
   text-shadow: 0 0 18px rgba(249, 115, 22, 0.85), 0 2px 8px #000;
 }
+
+.ill-pill-att {
+  background: rgba(15, 23, 42, 0.72);
+  border-color: rgba(255, 255, 255, 0.28);
+  color: #f8fafc;
+}

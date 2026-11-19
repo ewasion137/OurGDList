@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Roulette — Private GD List</title>
+  <title>Roulette | Private GD List</title>
   <link rel="stylesheet" href="page.css">
 </head>
 <body>
@@ -15,6 +15,7 @@
         <a href="list.html#main">Main Top</a>
         <a href="list.html#zoink">Zoink Skill</a>
         <a href="list.html#impossible">Impossible</a>
+        <a href="list.html#unfinished">Unfinished</a>
         <a href="list.html#beaten">Beaten</a>
         <a href="roulette.html" class="active">Roulette</a>
       </nav>
@@ -29,9 +30,9 @@
       </div>
       <div style="display: flex; gap: 8px; align-items: center;">
         <select id="r-pool" class="select-input">
-          <option value="main">Main Top (31)</option>
-          <option value="zoink">Zoink Skill (15)</option>
-          <option value="beaten">Beaten by Us (9)</option>
+          <option value="main">Main Top</option>
+          <option value="zoink">Zoink Skill</option>
+          <option value="beaten">Beaten by Us</option>
           <option value="all">Main + Beaten</option>
         </select>
         <button id="r-start" class="btn btn-primary">Новый забег</button>
@@ -53,6 +54,7 @@
   <script src="data/mainlist.js"></script>
   <script src="data/zoinklist.js"></script>
   <script src="data/imposlist.js"></script>
+  <script src="data/unfinishedlist.js"></script>
   <script src="data/beatenlist.js"></script>
   <script src="script.js"></script>
 </body>

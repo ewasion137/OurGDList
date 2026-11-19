@@ -36,6 +36,11 @@ function isVideoThumb(path) {
   return /\.(mp4|webm|mov|m4v)(\?.*)?$/i.test(String(path || ""));
 }
 
+function formatAttempts(val) {
+  if (val === null || val === undefined || val === "") return "";
+  return typeof val === "number" ? val.toLocaleString("en-US") : String(val);
+}
+
 function idButtonHtml(id) {
   return `<button class="id-btn" type="button" data-copy="${esc(id)}">ID: ${esc(id)}</button>`;
 }
@@ -182,6 +187,7 @@ function initListPage() {
     main: { title: "Main Top", sub: "Баллы: 0 - 1,000. Верификация от 0-60%, длительность от 5 сек, до 14 CPS." },
     zoink: { title: "Zoink Skill Top", sub: "Баллы: 1,000 - 10,000. Без смены TPS, до 16 CPS, наличие макроса." },
     impossible: { title: "Impossible Top", sub: "Баллы: 10,000 - 100,000. Лимит до 6000 TPS и записанный макрос." },
+    unfinished: { title: "Unfinished List", sub: "Уровни в разработке или на верификации. Баллы примерные (Estimated Points)." },
     beaten: { title: "Beaten by Us", sub: "Официальные демоны, пройденные участниками листа." }
   };
 
@@ -202,7 +208,7 @@ function initListPage() {
   }
 
   function buildCardHtml(opts) {
-    const { rank, name, creator, id, points, tier, topClass, wrText, wrVerified, rightTop, tagsHtml, detailsHtml, thumb, hasThumb } = opts;
+    const { rank, name, creator, id, points, ptsText, tier, topClass, wrText, wrVerified, rightTop, tagsHtml, detailsHtml, thumb, hasThumb } = opts;
     const mediaSrc = thumb ? esc(encodeURI(thumb)) : "";
     const isVid = isVideoThumb(thumb);
 
@@ -228,6 +234,11 @@ function initListPage() {
       ? `<div class="detail-item"><span class="detail-label">Preview Clip</span><a href="${mediaSrc}" target="_blank" style="color: var(--ok);">Open MP4</a></div>`
       : "";
 
+    const idPill = id ? idButtonHtml(id) : `<span class="ill-pill">ID: TBA</span>`;
+    const gdbBlock = id
+      ? `<div class="detail-item"><span class="detail-label">GDBrowser</span><a href="https://gdbrowser.com/${esc(id)}" target="_blank" rel="noopener" style="color: #93c5fd;">gdbrowser.com/${esc(id)}</a></div>`
+      : "";
+
     return `
       <article class="ill-card${hasThumb ? "" : " compact"}${tier ? ` tier-${tier}` : ""}${topClass ? ` ${topClass}` : ""}">
         ${bgLayer}
@@ -241,13 +252,13 @@ function initListPage() {
             <div class="ill-creator">by ${esc(creator)}</div>
             <div class="ill-tags">
               ${tagsHtml || ""}
-              ${idButtonHtml(id)}
+              ${idPill}
             </div>
           </div>
           <div class="ill-right">
             <div>
               <div class="ill-stat-top">${esc(rightTop)}</div>
-              <div class="ill-pts">${points.toLocaleString("en-US")} pts</div>
+              <div class="ill-pts">${esc(ptsText || `${points.toLocaleString("en-US")} pts`)}</div>
             </div>
             <button class="details-btn" type="button" data-details>Show details \u25BE</button>
           </div>
@@ -255,10 +266,7 @@ function initListPage() {
         <div class="ill-details">
           ${detailsHtml}
           ${clipLink}
-          <div class="detail-item">
-            <span class="detail-label">GDBrowser</span>
-            <a href="https://gdbrowser.com/${esc(id)}" target="_blank" rel="noopener" style="color: #93c5fd;">gdbrowser.com/${esc(id)}</a>
-          </div>
+          ${gdbBlock}
         </div>
       </article>
     `;
@@ -289,15 +297,20 @@ function initListPage() {
           ? `Verified: ${lvl.verifier}`
           : (lvl.best ? `Best: ${lvl.best.percent}% (${lvl.best.player})` : "Unverified");
         const victorsText = Array.isArray(lvl.victors) && lvl.victors.length ? lvl.victors.join(", ") : "None";
+        const attText = lvl.rank <= 5 ? formatAttempts(lvl.attempts) : "";
+        const attHolder = lvl.verifier || (lvl.best && lvl.best.player) || "";
+
         const tags = [
           `<span class="ill-pill ill-pill-${lvl.tier}">${lvl.tier}</span>`,
           lvl.skip ? `<span class="ill-pill ill-pill-skip">Skip Allowed</span>` : "",
+          attText ? `<span class="ill-pill ill-pill-att">Attempts: ${esc(attText)}</span>` : "",
           Array.isArray(lvl.victors) && lvl.victors.length ? `<span class="ill-pill">Victors: ${esc(victorsText)}</span>` : ""
         ].join("");
 
         const details = `
           <div class="detail-item"><span class="detail-label">Verifier</span><span>${esc(lvl.verifier || "Unverified")}</span></div>
           <div class="detail-item"><span class="detail-label">Victors</span><span>${esc(victorsText)}</span></div>
+          ${attText ? `<div class="detail-item"><span class="detail-label">Verifier Attempts</span><span>${esc(attText)}${attHolder ? ` (${esc(attHolder)})` : ""}</span></div>` : ""}
           <div class="detail-item"><span class="detail-label">Rule 1 Skip</span><span>${lvl.skip ? "Allowed" : "No"}</span></div>
           ${lvl.video ? `<div class="detail-item"><span class="detail-label">Video</span><a href="${esc(lvl.video)}" target="_blank" rel="noopener" style="color: var(--ok);">Watch</a></div>` : ""}
         `;
@@ -333,14 +346,19 @@ function initListPage() {
       containerEl.innerHTML = rows.length ? rows.map((lvl) => {
         const hasThumb = lvl.rank <= 3;
         const wrText = lvl.best ? `WR: ${lvl.best.percent}% (${lvl.best.player})` : "No progress";
+        const attText = lvl.rank <= 5 ? formatAttempts(lvl.attempts) : "";
+        const attHolder = (lvl.best && lvl.best.player) || "";
+
         const tags = [
           `<span class="ill-pill">Standard TPS</span>`,
           `<span class="ill-pill">&le; 16 CPS</span>`,
+          attText ? `<span class="ill-pill ill-pill-att">Attempts: ${esc(attText)}</span>` : "",
           lvl.skip ? `<span class="ill-pill ill-pill-skip">Skip Allowed</span>` : ""
         ].join("");
 
         const details = `
           <div class="detail-item"><span class="detail-label">Best Run</span><span>${esc(wrText)}</span></div>
+          ${attText ? `<div class="detail-item"><span class="detail-label">Attempts</span><span>${esc(attText)}${attHolder ? ` (${esc(attHolder)})` : ""}</span></div>` : ""}
           <div class="detail-item"><span class="detail-label">Rule 1 Skip</span><span>${lvl.skip ? "Allowed" : "No"}</span></div>
           ${lvl.video ? `<div class="detail-item"><span class="detail-label">Macro / Video</span><a href="${esc(lvl.video)}" target="_blank" rel="noopener" style="color: var(--ok);">Watch</a></div>` : ""}
         `;
@@ -404,32 +422,94 @@ function initListPage() {
       return;
     }
 
+    if (activeTab === "unfinished") {
+      const rows = getSorted(window.UNFINISHED_LIST || [])
+        .map((lvl, idx) => ({ ...lvl, rank: idx + 1 }))
+        .filter((lvl) => {
+          if (!q) return true;
+          return [lvl.name, lvl.id, lvl.creator, lvl.status, lvl.builder, lvl.verifier].join(" ").toLowerCase().includes(q);
+        });
+
+      containerEl.innerHTML = rows.length ? rows.map((lvl) => {
+        const isVerifying = String(lvl.status || "").toLowerCase() === "verifying";
+        const holder = isVerifying ? (lvl.verifier || lvl.creator) : (lvl.builder || lvl.creator);
+        const wrText = isVerifying
+          ? `Verifying: ${holder} (${lvl.percent || 0}%)`
+          : `Building (${holder})`;
+        const rightTop = isVerifying ? `${lvl.percent || 0}%` : "BUILDING";
+        const attText = lvl.rank <= 5 ? formatAttempts(lvl.attempts) : "";
+
+        const tags = [
+          `<span class="ill-pill ${isVerifying ? "ill-pill-verifying" : "ill-pill-building"}">${esc(lvl.status || "Building")}</span>`,
+          attText ? `<span class="ill-pill ill-pill-att">Attempts: ${esc(attText)}</span>` : "",
+          `<span class="ill-pill">Unfinished</span>`
+        ].join("");
+
+        const details = `
+          <div class="detail-item"><span class="detail-label">Stage</span><span>${esc(lvl.status || "Building")}</span></div>
+          <div class="detail-item"><span class="detail-label">${isVerifying ? "Verifier" : "Builder"}</span><span>${esc(holder)}</span></div>
+          ${isVerifying ? `<div class="detail-item"><span class="detail-label">Progress</span><span>${lvl.percent || 0}%</span></div>` : ""}
+          ${attText ? `<div class="detail-item"><span class="detail-label">Verifier Attempts</span><span>${esc(attText)} (${esc(holder)})</span></div>` : ""}
+          ${lvl.video ? `<div class="detail-item"><span class="detail-label">Preview</span><a href="${esc(lvl.video)}" target="_blank" rel="noopener" style="color: var(--ok);">Watch</a></div>` : ""}
+        `;
+
+        return buildCardHtml({
+          rank: lvl.rank,
+          name: lvl.name,
+          creator: lvl.creator,
+          id: lvl.id || "",
+          points: lvl.points || 0,
+          ptsText: `~${(lvl.points || 0).toLocaleString("en-US")} est. pts`,
+          topClass: lvl.rank === 1 ? "top-1 top-1-unfinished" : "",
+          wrText,
+          wrVerified: false,
+          rightTop,
+          tagsHtml: tags,
+          detailsHtml: details,
+          thumb: lvl.thumb,
+          hasThumb: Boolean(lvl.thumb)
+        });
+      }).join("") : `<div class="card muted">Ничего не найдено</div>`;
+      return;
+    }
+
     const rows = (window.BEATEN_LIST || [])
       .map((lvl, idx) => ({ ...lvl, rank: idx + 1 }))
       .filter((lvl) => {
         if (!q) return true;
-        return [lvl.name, lvl.id, ...(lvl.victors || [])].join(" ").toLowerCase().includes(q);
+        return [lvl.name, lvl.id, DIFF_LABELS[lvl.diff] || "", ...(lvl.victors || [])].join(" ").toLowerCase().includes(q);
       });
 
-    containerEl.innerHTML = rows.length ? rows.map((lvl) => `
-      <article class="ill-card compact">
-        <div class="ill-main" style="align-items: center;">
-          <div class="demon-slot">
-            <img class="demon-icon" referrerpolicy="no-referrer" src="${esc(DEMON_ICONS[lvl.diff] || "")}" alt="${esc(DIFF_LABELS[lvl.diff] || lvl.diff)}" title="${esc(DIFF_LABELS[lvl.diff] || lvl.diff)}">
-          </div>
-          <div class="ill-body">
-            <div class="ill-title-row">
-              <span class="ill-title">${esc(lvl.name)}</span>
-              <span class="ill-wr-pill verified">${esc(DIFF_LABELS[lvl.diff] || lvl.diff)}</span>
+    containerEl.innerHTML = rows.length ? rows.map((lvl) => {
+      const attPills = lvl.attempts && typeof lvl.attempts === "object"
+        ? Object.entries(lvl.attempts).map(([player, val]) => {
+            const text = formatAttempts(val);
+            const suffix = typeof val === "number" ? " att" : "";
+            return `<span class="ill-pill ill-pill-att">${esc(player)}: ${esc(text)}${suffix}</span>`;
+          }).join("")
+        : "";
+
+      return `
+        <article class="ill-card compact">
+          <div class="ill-main" style="align-items: center;">
+            <div class="demon-slot">
+              <img class="demon-icon" referrerpolicy="no-referrer" src="${esc(DEMON_ICONS[lvl.diff] || "")}" alt="${esc(DIFF_LABELS[lvl.diff] || lvl.diff)}" title="${esc(DIFF_LABELS[lvl.diff] || lvl.diff)}">
             </div>
-            <div class="ill-creator">Beaten by: ${esc((lvl.victors || []).join(", "))}</div>
+            <div class="ill-body">
+              <div class="ill-title-row">
+                <span class="ill-title">${esc(lvl.name)}</span>
+                <span class="ill-wr-pill verified">${esc(DIFF_LABELS[lvl.diff] || lvl.diff)}</span>
+              </div>
+              <div class="ill-creator">Beaten by: ${esc((lvl.victors || []).join(", "))}</div>
+              ${attPills ? `<div class="ill-tags">${attPills}</div>` : ""}
+            </div>
+            <div class="ill-right">
+              ${idButtonHtml(lvl.id)}
+            </div>
           </div>
-          <div class="ill-right">
-            ${idButtonHtml(lvl.id)}
-          </div>
-        </div>
-      </article>
-    `).join("") : `<div class="card muted">Ничего не найдено</div>`;
+        </article>
+      `;
+    }).join("") : `<div class="card muted">Ничего не найдено</div>`;
   }
 
   function switchTab(tab) {

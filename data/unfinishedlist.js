@@ -31,6 +31,7 @@ window.UNFINISHED_LIST = [
         verifier: "Legendary",
         percent: 44,
         points: 1000,
+        attempts: "Unknown",
     },
     {
         name: "RAGING WOLF",
@@ -40,5 +41,6 @@ window.UNFINISHED_LIST = [
         verifier: "ewasion",
         percent: 27,
         points: 1000,
+        attempts: 458,
     },
 ];

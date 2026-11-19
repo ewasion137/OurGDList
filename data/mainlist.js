@@ -1,6 +1,6 @@
 window.MAIN_LIST = [
     {
-        name: "BEVLYNOUS nerfed",
+        name: "BEVLYNOUS",
         id: "151873353",
         creator: "ewasion",
         verifier: "ewasion",
@@ -8,6 +8,7 @@ window.MAIN_LIST = [
         points: 1000,
         skip: true,
         thumb: "thumb/Bevlynous.mp4",
+        attempts: 2112,
     },
     {
         name: "My Plague",
@@ -15,8 +16,9 @@ window.MAIN_LIST = [
         creator: "ewasion",
         verifier: "ewasion",
         victors: [],
-        points: 900,
+        points: 950,
         thumb: "thumb/My Plague.png",
+        attempts: 1242,
     },
     {
         name: "Portalhaus",
@@ -25,8 +27,9 @@ window.MAIN_LIST = [
         verifier: null,
         victors: [],
         best: { player: "Legendary", percent: 99 },
-        points: 870,
+        points: 900,
         thumb: "thumb/Portalhaus.mp4",
+        attempts: "Unknown",
     },
     {
         name: "le heil",
@@ -35,6 +38,7 @@ window.MAIN_LIST = [
         verifier: "Legendary",
         victors: [],
         points: 860,
+        attempts: "Unknown",
     },
     {
         name: "le heil 2",
@@ -43,6 +47,7 @@ window.MAIN_LIST = [
         verifier: "ewasion",
         victors: [],
         points: 820,
+        attempts: 709,
     },
     {
         name: "Intense Mind",
