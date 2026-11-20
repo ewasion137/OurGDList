@@ -33,6 +33,14 @@ window.ZOINK_LIST = [
         attempts: 1112,
     },
     {
+        name: "Hardest One Second",
+        id: "148127488",
+        creator: "ewasion",
+        best: { player: "ewasion", percent: 8.90 },
+        points: 7600,
+        attempts: 500,
+    },
+    {
         name: "KONTRA CITY",
         id: "102403652",
         creator: "ewasion",
