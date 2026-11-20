@@ -89,7 +89,7 @@ window.ZOINK_LIST = [
         name: "HELPMEIMSUICIDAL",
         id: "151674373",
         creator: "ewasion",
-        best: { player: "ewasion", percent: 40.70 },
+        best: { player: "ewasion", percent: 45.96 },
         points: 3000,
     },
     {
