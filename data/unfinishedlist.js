@@ -24,16 +24,6 @@ window.UNFINISHED_LIST = [
         points: 9800,
     },
     {
-        name: "in dev ybf nerfed",
-        id: "",
-        creator: "Legendary",
-        status: "Verifying",
-        verifier: "Legendary",
-        percent: 50,
-        points: 1000,
-        attempts: "Unknown",
-    },
-    {
         name: "RAGING WOLF",
         id: "",
         creator: "ewasion",
