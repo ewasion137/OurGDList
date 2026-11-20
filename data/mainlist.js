@@ -1,11 +1,23 @@
 window.MAIN_LIST = [
     {
+        name: "in dev ybf2 nerfed",
+        id: "Unknown",
+        creator: "Legendary",
+        verifier: null,
+        victors: [],
+        best: { player: "Legendary", percent: 70 },
+        points: 1000,
+        attempts: "3800",
+        skip: true,
+    },
+
+    {
         name: "BEVLYNOUS",
         id: "151873353",
         creator: "ewasion",
         verifier: "ewasion",
         victors: [],
-        points: 1000,
+        points: 980,
         skip: true,
         thumb: "thumb/Bevlynous.mp4",
         attempts: 2112,
